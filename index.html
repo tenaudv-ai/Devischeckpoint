@@ -1,0 +1,2415 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Devis — Le Checkpoint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --paper: #efeae0;
+    --paper-2: #ffffff;
+    --ink: #1f2a3c;
+    --ink-soft: #5b6472;
+    --felt: #2f5233;
+    --felt-dark: #223d27;
+    --amber: #c88a2e;
+    --line: #c9c0ac;
+    --line-soft: #ddd6c5;
+    --danger: #a8452f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1b1f18;
+      --paper-2: #23281f;
+      --ink: #ece6d6;
+      --ink-soft: #a9a290;
+      --felt: #6fa876;
+      --felt-dark: #4c7a52;
+      --amber: #e0a94a;
+      --line: #3c4235;
+      --line-soft: #2d3226;
+      --danger: #d97a5f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1b1f18;
+    --paper-2: #23281f;
+    --ink: #ece6d6;
+    --ink-soft: #a9a290;
+    --felt: #6fa876;
+    --felt-dark: #4c7a52;
+    --amber: #e0a94a;
+    --line: #3c4235;
+    --line-soft: #2d3226;
+    --danger: #d97a5f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, sans-serif;
+    min-height: 100%;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding-block: 48px 64px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .board > * { min-width: 0; }
+  header.top {
+    margin-bottom: 36px;
+  }
+  .kicker {
+    font-size: 13px;
+    color: var(--felt);
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(28px, 4vw, 40px);
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .sub {
+    color: var(--ink-soft);
+    font-size: 15px;
+    max-width: 60ch;
+    margin: 0;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 760px) {
+    .board { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--paper-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    padding: 26px;
+  }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .section-title:not(:first-child) { margin-top: 28px; }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .field .hint {
+    font-weight: 400;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+  }
+  input[type="number"], input[type="text"], input[type="email"], input[type="date"], textarea, select {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--paper-2);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) input[type="number"],
+    :root:not([data-theme="light"]) input[type="text"],
+    :root:not([data-theme="light"]) input[type="email"],
+    :root:not([data-theme="light"]) input[type="date"],
+    :root:not([data-theme="light"]) textarea,
+    :root:not([data-theme="light"]) select {
+      background: #fff;
+      color: #1f2a3c;
+    }
+  }
+  :root[data-theme="dark"] input[type="number"],
+  :root[data-theme="dark"] input[type="text"],
+  :root[data-theme="dark"] input[type="email"],
+  :root[data-theme="dark"] input[type="date"],
+  :root[data-theme="dark"] textarea,
+  :root[data-theme="dark"] select {
+    background: #fff;
+    color: #1f2a3c;
+  }
+  textarea { resize: vertical; line-height: 1.45; }
+  input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="date"]:focus, textarea:focus {
+    outline: 2px solid var(--felt);
+    outline-offset: 1px;
+  }
+  .radio-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .radio-opt {
+    flex: 1;
+    min-width: 140px;
+    position: relative;
+    cursor: pointer;
+    display: block;
+  }
+  .radio-opt input {
+    appearance: none;
+    -webkit-appearance: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .radio-opt .box {
+    display: block;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .radio-opt .box strong {
+    display: block;
+    color: var(--ink);
+    font-size: 14.5px;
+    margin-bottom: 2px;
+  }
+  .radio-opt input:checked + .box {
+    border-color: var(--felt);
+    background: color-mix(in srgb, var(--felt) 10%, transparent);
+  }
+  .radio-opt input:focus-visible + .box {
+    outline: 2px solid var(--felt);
+    outline-offset: 1px;
+  }
+  .preset-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .preset-btn {
+    flex: 1;
+    min-width: 150px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    text-align: left;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: border-color .15s, background .15s;
+  }
+  .preset-btn:hover {
+    border-color: var(--felt);
+    background: color-mix(in srgb, var(--felt) 8%, var(--paper));
+  }
+  .preset-btn:focus-visible {
+    outline: 2px solid var(--felt);
+    outline-offset: 1px;
+  }
+  .preset-btn.active {
+    border-color: var(--felt);
+    background: color-mix(in srgb, var(--felt) 12%, var(--paper));
+  }
+  .preset-btn.active.dirty {
+    border-color: var(--amber);
+    background: color-mix(in srgb, var(--amber) 12%, var(--paper));
+  }
+  .preset-btn.active.dirty::after {
+    content: ' personnalisé';
+    display: block;
+    font-size: 10.5px;
+    color: var(--amber);
+    font-weight: 600;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .preset-btn strong {
+    display: block;
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 3px;
+  }
+  .preset-btn span {
+    display: block;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+  summary::-webkit-details-marker { display: none; }
+  details[open] summary .chevron { transform: rotate(90deg); }
+  .devis-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px dashed var(--line-soft);
+    font-size: 13px;
+  }
+  .devis-row:last-child { border-bottom: none; }
+  .devis-row .meta { color: var(--ink-soft); font-size: 11.5px; }
+  .devis-row-actions { display: flex; gap: 6px; }
+  .devis-row-actions button {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+    border-radius: 5px;
+    padding: 4px 9px;
+    cursor: pointer;
+  }
+  .devis-row-actions button:hover { border-color: var(--felt); }
+
+  .toggle-line {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .toggle-line:last-child { border-bottom: none; }
+  .toggle-line input[type="checkbox"] {
+    margin-top: 3px;
+    width: 17px;
+    height: 17px;
+    accent-color: var(--felt);
+    flex-shrink: 0;
+  }
+  .toggle-line .txt { flex: 1; }
+  .toggle-line .txt strong {
+    display: block;
+    font-size: 14.5px;
+    color: var(--ink);
+  }
+  .toggle-line .txt .hint {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .rate-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .rate-input input[type="number"] {
+    width: 90px;
+    padding: 6px 8px;
+    font-size: 13.5px;
+  }
+  .rate-input span {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+  .tbd {
+    display: inline-block;
+    font-size: 10.5px;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+
+  /* En-tête de groupe de services dans Prestations */
+  .service-group {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    color: var(--felt);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin: 22px 0 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .service-group:first-of-type { margin-top: 8px; }
+
+  /* Accordion / sections dépliables */
+  details.accordion {
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    background: var(--paper);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  details.accordion > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Inter', sans-serif;
+    user-select: none;
+  }
+  details.accordion > summary::-webkit-details-marker { display: none; }
+  details.accordion > summary .chevron {
+    display: inline-block;
+    transition: transform .15s;
+    color: var(--felt);
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  details.accordion[open] > summary .chevron { transform: rotate(90deg); }
+  details.accordion > summary .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--felt);
+    color: var(--paper);
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  details.accordion > summary .title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  details.accordion > summary .acc-summary {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-left: auto;
+    text-align: right;
+    font-style: italic;
+  }
+  details.accordion > .acc-body {
+    padding: 4px 18px 18px;
+    border-top: 1px solid var(--line-soft);
+  }
+  details.accordion[open] > summary { padding-bottom: 12px; }
+  details.accordion.params > summary .num {
+    background: var(--amber);
+  }
+
+  /* Ledger / results card */
+  .ledger {
+    position: sticky;
+    top: 20px;
+  }
+  @media (min-width: 761px) {
+    .ledger { max-height: calc(100vh - 40px); overflow-y: auto; }
+  }
+  @media (max-width: 760px) {
+    .ledger { position: static; }
+  }
+  .ledger .section-title { border-bottom-color: var(--line-soft); }
+  .line-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 13.5px;
+    padding: 7px 0;
+    border-bottom: 1px dashed var(--line-soft);
+    color: var(--ink-soft);
+  }
+  .line-item .line-main {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .line-item .line-sub {
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity: .8;
+  }
+  .line-item .val {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .line-item.zero { opacity: .45; }
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 2px solid var(--felt);
+  }
+  .total-row .label {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+  .total-row .amount {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    font-weight: 600;
+    color: var(--felt-dark);
+    font-variant-numeric: tabular-nums;
+  }
+  .per-person {
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    text-align: right;
+  }
+  .note {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    border-top: 1px solid var(--line-soft);
+    padding-top: 14px;
+  }
+  .note strong { color: var(--ink); }
+  .alerts { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+  .alert {
+    display: flex;
+    gap: 8px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--line-soft);
+    color: var(--ink);
+  }
+  .alert .dot { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; background: var(--ink-soft); }
+  .alert strong { display: block; font-size: 11px; letter-spacing: .03em; text-transform: uppercase; color: var(--ink-soft); }
+  .alert.error { border-color: var(--danger); }
+  .alert.error .dot { background: var(--danger); }
+  .alert.error strong { color: var(--danger); }
+  .alert.warn { border-color: var(--amber); }
+  .alert.warn .dot { background: var(--amber); }
+  .alert-ok { font-size: 12.5px; color: var(--felt); }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-soft);
+  }
+  .btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink);
+  }
+  .btn:hover { border-color: var(--felt); }
+  .btn:focus-visible { outline: 2px solid var(--felt); outline-offset: 2px; }
+  .btn-primary { background: var(--felt-dark); border-color: var(--felt-dark); color: #fff; }
+  .btn-blocked {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+    opacity: .9;
+    position: relative;
+  }
+  .btn-blocked::before {
+    content: "⛔ ";
+    font-size: 11px;
+    margin-right: 2px;
+  }
+  .btn-primary:hover { filter: brightness(1.12); }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 14px;
+    padding: 6px 10px 6px 6px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .back-btn:hover { border-color: var(--line); background: var(--paper-2); }
+  .back-btn:focus-visible { outline: 2px solid var(--felt); outline-offset: 2px; }
+  .client-summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 0;
+  }
+  .client-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0 16px;
+    margin-top: 14px;
+  }
+  .client-grid > * { min-width: 0; }
+  .client-grid .wide { grid-column: 1 / -1; }
+  .start-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+  .start-btn {
+    text-align: left;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+  }
+  .start-btn:hover { border-color: var(--felt); background: color-mix(in srgb, var(--felt) 8%, var(--paper)); }
+  .start-btn:focus-visible { outline: 2px solid var(--felt); outline-offset: 2px; }
+  .start-btn strong { display: block; font-family: 'Fraunces', serif; font-size: 20px; margin-bottom: 6px; }
+  .start-btn span { display: block; font-size: 13px; color: var(--ink-soft); line-height: 1.45; }
+  .start-btn span span { display: inline; }
+</style>
+<div class="wrap">
+  <header class="top">
+    <p class="kicker">Le Checkpoint — outil interne</p>
+    <h1>Devis</h1>
+    <p class="sub">Préparation de devis et estimation de la marge d’un événement au bar. Les tarifs marqués <span class="tbd">à définir</span> sont modifiables directement dans les champs.</p>
+  </header>
+
+  <div id="startScreen" class="card" style="margin-bottom:20px;">
+    <div class="section-title">Par où commencer ?</div>
+    <div class="start-row" id="startRow">
+      <button type="button" id="btnStartNew" class="start-btn">
+        <strong>Nouveau devis</strong>
+        <span>Formulaire vierge, puis forfait rapide ou saisie à la main.</span>
+      </button>
+      <button type="button" id="btnStartOld" class="start-btn" aria-controls="oldPanel">
+        <strong>Ancien devis</strong>
+        <span>Ouvrir ou modifier un devis déjà enregistré <span id="devisCount"></span></span>
+      </button>
+    </div>
+    <div id="oldPanel" hidden>
+      <button type="button" id="btnClosePanel" class="back-btn" aria-label="Retour au choix">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>
+        Retour
+      </button>
+      <div class="section-title" style="font-size:15px;">Devis enregistrés</div>
+      <div id="devisList">Chargement des devis…</div>
+    </div>
+  </div>
+
+  <div id="appMain" hidden>
+  <button type="button" id="btnBackStart" class="back-btn" aria-label="Retour au choix du devis">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></svg>
+    Retour
+  </button>
+  <div class="card" id="devisCard" style="margin-bottom:20px;">
+    <div class="section-title">Client et devis</div>
+    <details id="clientDetails">
+      <summary class="client-summary">
+        <span class="chevron" style="display:inline-block; transition:transform .15s;">▸</span>
+        <span id="clientSummaryText">Détails du devis</span>
+      </summary>
+      <div class="client-grid">
+        <div class="field">
+          <label for="devisName">Intitulé du devis<span class="hint"> (visible par le client)</span></label>
+          <input type="text" id="devisName" placeholder="Anniversaire Julie" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="devisRef">Référence du devis</label>
+          <input type="text" id="devisRef" placeholder="DEV-2026-001" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="clientName">Client / société</label>
+          <input type="text" id="clientName" placeholder="Nom du client" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="clientEmail">E-mail du client</label>
+          <input type="email" id="clientEmail" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="devisDate">Date du devis</label>
+          <input type="date" id="devisDate">
+        </div>
+        <div class="field">
+          <label for="eventDate">Date de l'événement</label>
+          <input type="date" id="eventDate">
+        </div>
+        <div class="field wide">
+          <label for="clientAddress">Adresse du client</label>
+          <textarea id="clientAddress" rows="2"></textarea>
+        </div>
+        <div class="field wide">
+          <label for="devisNotes">Notes et conditions<span class="hint"> (visibles par le client)</span></label>
+          <textarea id="devisNotes" rows="3" placeholder="Conditions de réservation, validité, précisions sur les montants…"></textarea>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="board">
+    <div class="card" style="padding:16px;">
+
+      <!-- 1. HORAIRES -->
+      <details class="accordion" id="accHoraires">
+        <summary>
+          <span class="chevron">▸</span>
+          <span class="num">1</span>
+          <span class="title">Horaires</span>
+          <span class="acc-summary" id="summHoraires"></span>
+        </summary>
+        <div class="acc-body">
+          <div class="field">
+            <label for="heures">Nombre d'heures</label>
+            <input type="number" id="heures" min="0" step="0.5" value="3">
+          </div>
+          <div class="field">
+            <label>Jour fermé ou ouvert</label>
+            <div class="radio-row">
+              <label class="radio-opt">
+                <input type="radio" name="creneau" value="ferme" checked>
+                <span class="box"><strong>Hors ouverture</strong></span>
+              </label>
+              <label class="radio-opt">
+                <input type="radio" name="creneau" value="ouvert">
+                <span class="box"><strong>Pendant ouverture</strong></span>
+              </label>
+            </div>
+            <p style="font-size:12px; color:var(--ink-soft); margin:10px 0 0;">Les tarifs horaires se règlent dans <strong>Paramètres</strong>.</p>
+          </div>
+        </div>
+      </details>
+
+      <!-- 2. NOMBRE D'INVITÉS -->
+      <details class="accordion" id="accInvites">
+        <summary>
+          <span class="chevron">▸</span>
+          <span class="num">2</span>
+          <span class="title">Nombre d'invités</span>
+          <span class="acc-summary" id="summInvites"></span>
+        </summary>
+        <div class="acc-body">
+          <div class="field">
+            <label for="personnes">Nombre d'invités<span class="hint"> — règle indicative : 1 encadrant pour 15 invités</span></label>
+            <input type="number" id="personnes" min="0" step="1" value="10">
+          </div>
+        </div>
+      </details>
+
+      <!-- 3. TYPE D'ÉVÉNEMENT -->
+      <details class="accordion" id="accType">
+        <summary>
+          <span class="chevron">▸</span>
+          <span class="num">3</span>
+          <span class="title">Type d'événement</span>
+          <span class="acc-summary" id="summType"></span>
+        </summary>
+        <div class="acc-body">
+          <p style="font-size:12.5px; color:var(--ink-soft); margin:4px 0 12px;">Choisir un forfait rapide préremplit les prestations. Tout reste modifiable ensuite.</p>
+          <div class="preset-row">
+            <button type="button" class="preset-btn" data-preset="anniversaire">
+              <strong>Anniversaire</strong>
+              <span>Équipe + animation + boissons vendues</span>
+            </button>
+            <button type="button" class="preset-btn" data-preset="atelier">
+              <strong>Atelier</strong>
+              <span>Sans présence, matériel prêté</span>
+            </button>
+            <button type="button" class="preset-btn" data-preset="reunion">
+              <strong>Réunion Extra</strong>
+              <span>Type coworking — équipe + nettoyage</span>
+            </button>
+            <button type="button" class="preset-btn" data-preset="teambuilding">
+              <strong>Teambuilding-Groupes</strong>
+              <span>Équipe + animation + traiteur + nettoyage</span>
+            </button>
+          </div>
+        </div>
+      </details>
+
+      <!-- 4. PRESTATIONS -->
+      <details class="accordion" id="accPrestations">
+        <summary>
+          <span class="chevron">▸</span>
+          <span class="num">4</span>
+          <span class="title">Prestations</span>
+          <span class="acc-summary" id="summPrestations"></span>
+        </summary>
+        <div class="acc-body">
+
+      <p style="font-size:12.5px; color:var(--ink-soft); margin:4px 0 10px;">Cocher ce qui est inclus. Les montants se règlent dans <strong>Paramètres</strong>.</p>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="equipe">
+        <div class="txt">
+          <strong>Service Bar</strong>
+          <div class="hint">Indication : 1 pers. / 15 invités. Nombre de personnes :
+            <input type="number" id="equipeStaff" min="0" step="1" value="1" style="width:60px; margin-left:4px; padding:2px 6px; font-size:12.5px;">
+          </div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="garantieConso">
+        <div class="txt">
+          <strong>Garantie de consommation</strong>
+          <div class="hint">Minimum de consommations garanti par le client (pour un événement pendant les heures d'ouverture). Montant dans Paramètres.</div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="locationSalle">
+        <div class="txt">
+          <strong>Location salle</strong>
+          <div class="hint">Mode :
+            <select id="locationSalleMode" style="padding:2px 6px; border:1px solid var(--line); border-radius:4px; background:var(--paper); color:var(--ink); font-family:'Inter',sans-serif; font-size:12.5px;">
+              <option value="forfait">forfait</option>
+              <option value="heure">au tarif horaire</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-group">Service Animation</div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animSimple">
+        <div class="txt">
+          <strong>Animation simple</strong>
+          <div class="hint">jeu déjà existant, pas de création</div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" disabled>
+        <div class="txt" style="opacity:.5;">
+          <strong>Quiz Checkpoint</strong>
+          <div class="hint">pas encore disponible</div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animTypeBingo">
+        <div class="txt">
+          <strong>Bingo Checkpoint</strong>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animTypeBlindtest">
+        <div class="txt">
+          <strong>Blind Test</strong>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animTypeKaraoke">
+        <div class="txt">
+          <strong>Karaoké</strong>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animTypeApero">
+        <div class="txt">
+          <strong>Apéro</strong>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animTypeEscapebox">
+        <div class="txt">
+          <strong>Escape Box</strong>
+        </div>
+      </div>
+
+      <div id="animSimpleTypeNote" style="font-size:11.5px; color:var(--ink-soft); margin:4px 0 8px 27px; display:none;"></div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animateurSupplementaire">
+        <div class="txt">
+          <strong>Animateur supplémentaire</strong>
+          <div class="hint">en plus de l'équipe déjà comptée</div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="animSurMesure">
+        <div class="txt">
+          <strong>Animation sur mesure</strong>
+          <div class="hint">Conception complète sur mesure — montants dans Paramètres (facturé + coût de conception)</div>
+        </div>
+      </div>
+
+      <div class="service-group">Service Traiteur</div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="traiteur">
+        <div class="txt">
+          <strong>Gestion traiteur</strong>
+          <div class="hint">Coordination d'un prestataire externe — mail / commande / service / matériel / nettoyage +</div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="traiteurNourriture">
+        <div class="txt">
+          <strong>Traiteur</strong>
+          <div class="hint">Le Checkpoint achète les plats au traiteur et les revend aux invités — montants dans Paramètres</div>
+          <div id="coutTraiteurInfo" style="margin-top:8px; font-size:12.5px; color:var(--ink); background:color-mix(in srgb, var(--felt) 6%, var(--paper-2)); border-left:3px solid var(--felt); padding:10px 12px; border-radius:4px; display:none;">
+            <div style="display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-variant-numeric:tabular-nums;">
+              <div>Prix d'achat (HTVA, /pers.)</div><div><strong id="coutTraiteurBase">—</strong></div>
+              <div>Prix de revente (HTVA, /pers.)</div><div><strong id="coutTraiteurVal">—</strong> <span style="color:var(--ink-soft); font-size:11px;">= achat × 1,15</span></div>
+              <div>Marge réelle (/pers.)</div><div><strong id="coutTraiteurMarge" style="color:var(--felt-dark);">—</strong></div>
+            </div>
+            <div style="color:var(--ink-soft); font-size:11px; margin-top:6px; font-style:italic;">TVA 6 % traiteur récupérable (hors coût). TVA 12 % nourriture appliquée au client via le taux « Nourriture revendue ».</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="service-group">Service Matériel</div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="materielAchatOn">
+        <div class="txt">
+          <strong>Achat de matériel particulier</strong>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="materielCadeauxOn">
+        <div class="txt">
+          <strong>Cadeaux gagnants</strong>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="materielPretOn">
+        <div class="txt">
+          <strong>Prêt de matériel</strong>
+        </div>
+      </div>
+
+      <div class="service-group">Service Entretien</div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="nettoyage">
+        <div class="txt">
+          <strong>Nettoyage</strong>
+          <div class="hint">Remise en état après l'événement</div>
+        </div>
+      </div>
+
+        </div>
+      </details>
+
+      <!-- 5. PARAMÈTRES (tarifs facturés + coûts réels) -->
+      <details class="accordion params" id="accParametres">
+        <summary>
+          <span class="chevron">▸</span>
+          <span class="num">5</span>
+          <span class="title">Paramètres</span>
+          <span class="acc-summary">tarifs et coûts — ne pas modifier sans vérification</span>
+        </summary>
+        <div class="acc-body">
+
+        <h4 style="font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:6px 0 10px; color:var(--felt);">Tarifs facturés au client</h4>
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 14px;">Les montants qui alimentent le prix du devis selon ce qui est coché dans Prestations.</p>
+
+        <div class="service-group">Service Bar</div>
+        <div class="field">
+          <label>Tarif horaire — hors ouverture<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="rateFerme" min="0" step="5" value="0">
+            <span>€/h</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Tarif horaire — pendant ouverture<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="rateOuvert" min="0" step="5" value="0">
+            <span>€/h</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Présence équipe</label>
+          <div class="rate-input">
+            <input type="number" id="equipeRate" min="0" step="5" value="50">
+            <span>€/h/pers.</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Location salle<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="locationSalleFee" min="0" step="5" value="0">
+            <span id="locationSalleUnit">€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Garantie de consommation<span class="hint"> (minimum garanti par le client, typique : pendant ouverture)</span></label>
+          <div class="rate-input">
+            <input type="number" id="garantieConsoFee" min="0" step="10" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+
+        <div class="service-group">Service Animation</div>
+        <div class="field">
+          <label>Animation simple — horaire</label>
+          <div class="rate-input">
+            <input type="number" id="animSimpleRate" min="0" step="5" value="50">
+            <span>€/h</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Animation simple — préparation (forfait)</label>
+          <div class="rate-input">
+            <input type="number" id="animSimplePrep" min="0" step="5" value="30">
+            <span>€</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Animation sur mesure — facturé au client<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="animSurMesureFacture" min="0" step="10" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+
+        <div class="service-group">Service Traiteur</div>
+        <div class="field">
+          <label>Gestion traiteur<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="traiteurFee" min="0" step="5" value="60">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Prix du traiteur par personne (HTVA)<span class="hint"> — base du calcul « +6 % TVA +15 % marge »</span></label>
+          <div class="rate-input">
+            <input type="number" id="traiteurPrixHTVA" min="0" step="0.5" value="0">
+            <span>€/invité HTVA</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Nourriture — prix de revente au client<span class="hint"> (laissez à 0 pour utiliser le calcul automatique ci-dessus ; sinon, ce montant prend le dessus)</span></label>
+          <div class="rate-input">
+            <input type="number" id="traiteurReventePers" min="0" step="1" value="0">
+            <span>€/invité</span>
+          </div>
+        </div>
+
+        <div class="service-group">Service Matériel</div>
+        <div class="field">
+          <label>Achat de matériel<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="materielAchatFee" min="0" step="5" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Cadeaux gagnants<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="materielCadeauxFee" min="0" step="5" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Prêt de matériel<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="materielPretFee" min="0" step="5" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+
+        <div class="service-group">Service Entretien</div>
+        <div class="field">
+          <label>Nettoyage<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="nettoyageFee" min="0" step="5" value="30">
+            <span>€ forfait (min. 30 €)</span>
+          </div>
+        </div>
+
+        <h4 style="font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:24px 0 10px; color:var(--felt); padding-top:14px; border-top:1px solid var(--line-soft);">Recette</h4>
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 14px;">Recettes complémentaires estimées, en plus du prix du devis. Automatiquement calculées quand la prestation liée est cochée. Mettre 0 pour ne pas compter la recette.</p>
+
+        <div style="padding:10px 12px; background:color-mix(in srgb, var(--felt) 6%, var(--paper-2)); border:1px solid var(--line-soft); border-radius:8px; margin-bottom:12px;">
+          <label style="display:flex; align-items:flex-start; gap:10px; font-size:13.5px; cursor:pointer;">
+            <input type="checkbox" id="boisson" style="margin-top:2px; width:16px; height:16px; accent-color:var(--felt); flex-shrink:0;">
+            <span><strong>Vente de boissons prévue</strong><div style="font-size:11.5px; color:var(--ink-soft); margin-top:2px;">Marge interne nette estimée par invité/heure. Indépendante du Service Bar.</div></span>
+          </label>
+          <div class="rate-input" style="margin-top:8px;">
+            <input type="number" id="boissonRate" min="0" step="0.5" value="2.50">
+            <span>€/h/personne</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Inscriptions animations<span class="hint"> (quand Animation simple cochée)</span></label>
+          <div class="rate-input">
+            <input type="number" id="recetteInscriptionsAnim" min="0" step="1" value="0">
+            <span>€/personne</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Ventes de cartes<span class="hint"> (quand Bingo Checkpoint coché)</span></label>
+          <div class="rate-input">
+            <input type="number" id="recetteVentesCartes" min="0" step="1" value="0">
+            <span>€/personne</span>
+          </div>
+        </div>
+        <input type="hidden" id="recetteMargeTraiteur" value="0">
+        <p style="font-size:12px; color:var(--ink-soft); margin:8px 0 0; font-style:italic;">La marge traiteur n'apparaît pas ici : elle est déjà incluse dans la marge nette via « revente nourriture (bloc 1) − achat traiteur (bloc 3) ». L'ajouter ici reviendrait à la compter deux fois.</p>
+
+        <h4 style="font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:24px 0 10px; color:var(--felt); padding-top:14px; border-top:1px solid var(--line-soft);">TVA</h4>
+
+        <div style="background:color-mix(in srgb, var(--felt) 6%, var(--paper-2)); border:1px solid var(--line-soft); border-radius:8px; padding:12px 14px; margin-bottom:12px;">
+          <label style="display:flex; align-items:flex-start; gap:10px; font-size:13px; cursor:pointer;">
+            <input type="checkbox" id="tvaInclus" style="margin-top:2px; width:16px; height:16px; accent-color:var(--felt); flex-shrink:0;">
+            <span>Les tarifs des prestations ci-dessous sont encodés <strong>TVAC</strong> (aux taux de chaque poste)</span>
+          </label>
+          <p style="font-size:11.5px; color:var(--ink-soft); margin:8px 0 0; line-height:1.5;">Par défaut, les tarifs sont HTVA. La nourriture a ses propres choix HTVA/TVAC. Encoder les coûts internes hors TVA récupérable et la marge boissons nette de TVA.</p>
+        </div>
+
+        <details class="accordion" style="margin-bottom:12px;">
+          <summary>
+            <span class="chevron">▸</span>
+            <span class="title" style="font-size:14.5px;">TVA par poste — modifier les taux</span>
+          </summary>
+          <div class="acc-body">
+            <p style="font-size:11.5px; color:var(--ink-soft); margin:4px 0 14px; line-height:1.5;">Taux en %, de 0 à 100. Ils sont enregistrés avec chaque version du devis. Les boissons sont une marge interne nette de TVA, pas une ligne facturée dans ce devis.</p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px 14px;">
+              <div class="field" style="margin:0;">
+                <label>Accès au bar (%)</label>
+                <input type="number" id="tvaAccesBar" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Présence équipe (%)</label>
+                <input type="number" id="tvaEquipe" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Location salle (%)</label>
+                <input type="number" id="tvaLocationSalle" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Animation (préparation et Escape Box incluses) (%)</label>
+                <input type="number" id="tvaAnimation" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Gestion traiteur (%)</label>
+                <input type="number" id="tvaTraiteur" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Nettoyage (%)</label>
+                <input type="number" id="tvaNettoyage" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Matériel particulier (%)</label>
+                <input type="number" id="tvaMaterielAchat" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Cadeaux gagnants (%)</label>
+                <input type="number" id="tvaMaterielCadeaux" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Prêt de matériel (%)</label>
+                <input type="number" id="tvaMaterielPret" min="0" max="100" step="1" value="21">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Nourriture / plats traiteur revendus (%)</label>
+                <input type="number" id="tvaNourriture" min="0" max="100" step="1" value="12">
+              </div>
+              <div class="field" style="margin:0;">
+                <label>Achat auprès du traiteur (interne) (%)</label>
+                <input type="number" id="tvaAchatTraiteur" min="0" max="100" step="1" value="6">
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <h4 style="font-family:'Fraunces',serif; font-weight:600; font-size:15px; margin:24px 0 10px; color:var(--felt); padding-top:14px; border-top:1px solid var(--line-soft);">Coûts réels du Checkpoint</h4>
+        <p style="font-size:12px; color:var(--ink-soft); margin:0 0 14px;">Ce que l'événement coûte réellement, indépendamment de ce qui est facturé au client. Sert uniquement au calcul de la marge estimée. Les frais généraux ne sont à intégrer que s’ils sont réellement imputables à cet événement.</p>
+
+        <div class="field">
+          <label>Énergie (élec et chauffage)</label>
+          <div class="rate-input">
+            <input type="number" id="fraisEnergieRate" min="0" step="1" value="10">
+            <span>€/h</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Assurances<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="fraisAssurance" min="0" step="1" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Permis - accord commune<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="fraisPermis" min="0" step="1" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Personnel — coût réel<span class="hint"> (indépendant du tarif facturé equipeRate)</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutPersonnelHeure" min="0" step="1" value="20">
+            <span>€/h/pers. (équipe + animateur supplémentaire si nécessaire)</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Nettoyage — coût réel<span class="hint"> (indépendant du forfait facturé nettoyageFee)</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutNettoyageReel" min="0" step="1" value="30">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Achat de matériel — coût réel<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutMaterielAchatReel" min="0" step="1" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Cadeaux gagnants — coût réel<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutMaterielCadeauxReel" min="0" step="1" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Prêt de matériel — coût réel<span class="tbd">à définir</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutMaterielPretReel" min="0" step="1" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <input type="hidden" id="coutMaterielReel" value="0">
+        <div class="field">
+          <label>Nourriture — achat auprès du traiteur<span class="hint"> (quand « Nourriture / plats revendus » coché)</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutTraiteurAchatPers" min="0" step="1" value="0">
+            <span>€/invité</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Animation — coût réel<span class="hint"> (auto : 50€ si Escape Box choisi)</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutAnimationReel" min="0" step="1" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Animation sur mesure — coût de conception<span class="hint"> (forfait, temps de création)</span></label>
+          <div class="rate-input">
+            <input type="number" id="coutAnimSurMesure" min="0" step="10" value="0">
+            <span>€ forfait</span>
+          </div>
+        </div>
+        </div>
+      </details>
+
+    </div>
+
+    <div class="card ledger">
+      <div class="section-title">1. Prix du devis <span style="font-size:11px; font-weight:400; color:var(--ink-soft);">— facturé au client</span></div>
+      <div id="lines"></div>
+      <div class="total-row">
+        <span class="label">Total HTVA</span>
+        <span class="amount" id="total">0 €</span>
+      </div>
+      <div class="per-person" id="perPerson"></div>
+      <div id="tvaBreakdown"></div>
+
+      <div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--line-soft);">
+        <div style="font-family:'Fraunces',serif; font-size:15px; font-weight:600; margin-bottom:8px;">2. Recettes complémentaires <span style="font-size:11px; font-weight:400; color:var(--ink-soft);">— non facturées, mais empochées</span></div>
+        <div id="recettesLines"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line-soft);">
+          <span style="font-size:13px; color:var(--ink-soft);">Total recettes complémentaires</span>
+          <span id="recettesVal" style="font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--ink);"></span>
+        </div>
+      </div>
+
+      <div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--line-soft);">
+        <div style="font-family:'Fraunces',serif; font-size:15px; font-weight:600; margin-bottom:4px;">3. Coûts réels du Checkpoint</div>
+        <div style="font-size:11px; color:var(--ink-soft); margin-bottom:8px; font-style:italic;">Ce que l'événement coûte réellement, quelles que soient les cases cochées en 1.</div>
+        <div id="coutsLines"></div>
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:8px; padding-top:8px; border-top:1px dashed var(--line-soft);">
+          <span style="font-size:13px; color:var(--ink-soft);">Total coûts réels</span>
+          <span id="seuilVal" style="font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--ink);"></span>
+        </div>
+      </div>
+
+      <div style="margin-top:22px; padding-top:16px; border-top:2px solid var(--felt);">
+        <div style="display:flex; justify-content:space-between; align-items:baseline;">
+          <span style="font-family:'Fraunces',serif; font-size:15px; color:var(--ink-soft);">4. Marge estimée de l’événement</span>
+          <span id="beneficeNetVal" style="font-family:'Fraunces',serif; font-size:26px; font-weight:600;"></span>
+        </div>
+        <div style="font-size:11px; color:var(--ink-soft); margin-top:2px;">= (1) Prix du devis + (2) Recettes complémentaires − (3) Coûts réels</div>
+        <div id="seuilWarning" style="display:none; margin-top:8px; font-size:12.5px; color:var(--danger); font-weight:600;">
+          ⚠ La marge estimée est négative — les recettes estimées ne couvrent pas les coûts saisis.
+        </div>
+        <div id="teambuildingOuvertNote" style="display:none; margin-top:8px; font-size:12px; color:var(--ink-soft);">
+          Forfait Teambuilding : le mémo prévoit explicitement une équipe et un nettoyage malgré le créneau ouvert. Cette configuration constitue une exception au réglage automatique du créneau.
+        </div>
+      </div>
+
+      <div id="surMesureNote" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); font-size:13px; color: var(--ink-soft);">
+        <strong style="color:var(--ink)">Animation sur mesure demandée</strong> — à budgétiser dans un autre module, non comprise dans cette estimation.
+      </div>
+      <div style="margin-top:22px; padding-top:16px; border-top:1px solid var(--line-soft);">
+        <div style="font-family:'Fraunces',serif; font-size:15px; font-weight:600; margin-bottom:8px;">5. Points à vérifier avant d'envoyer</div>
+        <ul class="alerts" id="alerts" aria-live="polite"></ul>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="btnApercuClient" class="btn btn-primary">Aperçu devis client</button>
+        <button type="button" id="btnPdfDevis" class="btn btn-primary">PDF client</button>
+        <button type="button" id="btnPdfInterne" class="btn">PDF interne</button>
+        <button type="button" id="btnSaveDevis" class="btn">Enregistrer une version</button>
+        <button type="button" id="btnNewDevis" class="btn">Nouveau devis</button>
+      </div>
+      <div id="devisStatus" role="status" style="font-size:12px; color:var(--ink-soft); margin-top:8px; display:none;"></div>
+
+      <div class="note">
+        <strong>Note :</strong> les postes marqués « à définir » utilisent des tarifs provisoires modifiables ci-contre. Ajustez-les selon vos coûts réels avant d'envoyer un devis.
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => n.toLocaleString('fr-BE', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  // Arrondi à 2 décimales (évite les dérives de centimes dans les totaux HTVA/TVA/TVAC)
+  const round2 = n => Math.round((n + Number.EPSILON) * 100) / 100;
+  // jsPDF (polices standard) ne sait pas écrire les espaces fines/insécables de toLocaleString ni les symboles hors WinAnsi
+  const pdfSafe = s => String(s).replace(/[  ]/g, ' ').replace(/[^\n\x20-\x7e\xa1-\xff€–—‘’“”…]/g, '');
+  const fmtPdf = n => pdfSafe(fmt(n));
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  async function safeUse(name) {
+    try {
+      if (typeof window.claude === 'undefined' || !window.claude || typeof window.claude.use !== 'function') return null;
+      return await window.claude.use(name);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function customConfirm(message, opts) {
+    return new Promise(resolve => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px;';
+      const box = document.createElement('div');
+      box.style.cssText = 'background:var(--paper-2); border:1px solid var(--line); border-radius:10px; padding:22px; max-width:480px; box-shadow:0 10px 30px rgba(0,0,0,.25); font-family:Inter,sans-serif;';
+      const buttons = opts && opts.singleButton
+        ? `<button type="button" data-cc="ok" style="padding:8px 14px; border:1px solid var(--felt); background:var(--felt); color:#fff; border-radius:6px; cursor:pointer; font-family:Inter,sans-serif; font-size:13px; font-weight:600;">${opts.singleButton}</button>`
+        : `<button type="button" data-cc="no" style="padding:8px 14px; border:1px solid var(--line); background:var(--paper); color:var(--ink); border-radius:6px; cursor:pointer; font-family:Inter,sans-serif; font-size:13px;">Annuler</button>
+           <button type="button" data-cc="yes" style="padding:8px 14px; border:1px solid var(--danger); background:var(--danger); color:#fff; border-radius:6px; cursor:pointer; font-family:Inter,sans-serif; font-size:13px; font-weight:600;">Confirmer</button>`;
+      box.innerHTML = `
+        <div style="font-size:14px; color:var(--ink); margin-bottom:18px; line-height:1.5;">${message}</div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">${buttons}</div>`;
+      overlay.appendChild(box);
+      document.body.appendChild(overlay);
+      function close(result) {
+        document.body.removeChild(overlay);
+        resolve(result);
+      }
+      if (opts && opts.singleButton) {
+        box.querySelector('[data-cc="ok"]').addEventListener('click', () => close(false));
+      } else {
+        box.querySelector('[data-cc="yes"]').addEventListener('click', () => close(true));
+        box.querySelector('[data-cc="no"]').addEventListener('click', () => close(false));
+      }
+      overlay.addEventListener('click', e => { if (e.target === overlay) close(false); });
+    });
+  }
+
+  function browserDownloadBlob(blob, filename) {
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function calc() {
+    const heures = parseFloat($('heures').value) || 0;
+    const personnes = parseFloat($('personnes').value) || 0;
+    const creneauChoix = document.querySelector('input[name="creneau"]:checked').value;
+    const creneauRateVal = creneauChoix === 'ferme'
+      ? (parseFloat($('rateFerme').value) || 0)
+      : (parseFloat($('rateOuvert').value) || 0);
+    const tarifNonDefini = creneauRateVal === 0;
+
+    // ---------- 1. PRIX DU DEVIS (facturé au client) ----------
+    const base = heures * creneauRateVal;
+    const equipeRate = parseFloat($('equipeRate').value) || 0;
+    const equipeStaff = Math.max(0, parseFloat($('equipeStaff').value) || 0);
+    const boissonRateVal = parseFloat($('boissonRate').value) || 0;
+    const boissonOn = $('boisson').checked; // désormais indépendant du Service BAR
+    const margeBoisson = boissonOn ? personnes * heures * boissonRateVal : 0;
+    const equipe = $('equipe').checked ? heures * equipeRate * equipeStaff : 0;
+    const recetteInscriptionsAnimRate = parseFloat($('recetteInscriptionsAnim').value) || 0;
+    const recetteVentesCartesRate = parseFloat($('recetteVentesCartes').value) || 0;
+    const recetteMargeTraiteurRate = parseFloat($('recetteMargeTraiteur').value) || 0;
+
+    const animSimpleRate = parseFloat($('animSimpleRate').value) || 0;
+    const animSimplePrepVal = parseFloat($('animSimplePrep').value) || 0;
+    const animSimpleOn = $('animSimple').checked;
+    const animTypeBingo = animSimpleOn && $('animTypeBingo').checked;
+    const animTypeBlindtest = animSimpleOn && $('animTypeBlindtest').checked;
+    const animTypeKaraoke = animSimpleOn && $('animTypeKaraoke').checked;
+    const animTypeApero = animSimpleOn && $('animTypeApero').checked;
+    const isEscapeBox = animSimpleOn && $('animTypeEscapebox').checked;
+    const animateurSuppOn = animSimpleOn && $('animateurSupplementaire').checked;
+    const nbAnimateurs = 1 + (animateurSuppOn ? 1 : 0);
+    const animSimpleRaw = heures * animSimpleRate * nbAnimateurs;
+    const animSimpleBase = animSimpleRaw + (isEscapeBox ? 80 : 0);
+    const animSimplePrep = animSimpleOn ? animSimplePrepVal : 0;
+    const animSimple = animSimpleOn ? animSimpleBase + animSimplePrep : 0;
+
+    const animSurMesureOn = $('animSurMesure').checked;
+    const animSurMesureFacture = animSurMesureOn ? (parseFloat($('animSurMesureFacture').value) || 0) : 0;
+
+    const traiteurOn = $('traiteur').checked;
+    const traiteur = traiteurOn ? (parseFloat($('traiteurFee').value) || 0) : 0;
+    const traiteurNourritureOn = $('traiteurNourriture').checked;
+    const traiteurPrixHTVA = parseFloat($('traiteurPrixHTVA').value) || 0;
+    const traiteurReventePersManuel = parseFloat($('traiteurReventePers').value) || 0;
+    // Prix de revente auto = prix HTVA × 1.15 (marge 15 % sur HTVA).
+    // La TVA 6 % payée au traiteur est récupérable, elle n'est pas un coût pour le Checkpoint.
+    // La TVA 12 % « nourriture revendue » est appliquée ensuite au devis client via tvaNourriture.
+    const traiteurReventeAuto = traiteurPrixHTVA > 0 ? traiteurPrixHTVA * 1.15 : 0;
+    const traiteurReventePers = traiteurReventePersManuel > 0 ? traiteurReventePersManuel : traiteurReventeAuto;
+    const traiteurReventeTotal = traiteurNourritureOn ? personnes * traiteurReventePers : 0;
+    // Affichage du coût calculé dans Prestations
+    const coutInfoEl = $('coutTraiteurInfo');
+    if (coutInfoEl) {
+      if (traiteurPrixHTVA > 0 || traiteurReventePersManuel > 0) {
+        coutInfoEl.style.display = 'block';
+        const reventeUsed = traiteurReventePers;
+        $('coutTraiteurBase').textContent = fmt(traiteurPrixHTVA);
+        $('coutTraiteurVal').innerHTML = fmt(reventeUsed) + (traiteurReventePersManuel > 0
+          ? ' <span style="color:var(--amber); font-size:11px; font-weight:600;">⚠ forcé manuellement</span>'
+          : '');
+        $('coutTraiteurMarge').textContent = fmt(reventeUsed - traiteurPrixHTVA);
+      } else {
+        coutInfoEl.style.display = 'none';
+      }
+    }
+    const nettoyageOn = $('nettoyage').checked;
+    const nettoyage = nettoyageOn ? (parseFloat($('nettoyageFee').value) || 0) : 0;
+    const materielAchatOn = $('materielAchatOn').checked;
+    const materielAchat = materielAchatOn ? (parseFloat($('materielAchatFee').value) || 0) : 0;
+    const materielCadeauxOn = $('materielCadeauxOn').checked;
+    const materielCadeaux = materielCadeauxOn ? (parseFloat($('materielCadeauxFee').value) || 0) : 0;
+    const materielPretOn = $('materielPretOn').checked;
+    const materielPret = materielPretOn ? (parseFloat($('materielPretFee').value) || 0) : 0;
+    const materiel = materielAchat + materielCadeaux + materielPret;
+    const materielOn = materielAchatOn || materielCadeauxOn || materielPretOn;
+    const garantieConsoOn = $('garantieConso').checked;
+    const garantieConsoFee = garantieConsoOn ? (parseFloat($('garantieConsoFee').value) || 0) : 0;
+    const locationSalleOn = $('locationSalle').checked;
+    const locationSalleMode = $('locationSalleMode').value;
+    const locationSalleFeeVal = parseFloat($('locationSalleFee').value) || 0;
+    const locationSalle = locationSalleOn ? (locationSalleMode === 'heure' ? heures * locationSalleFeeVal : locationSalleFeeVal) : 0;
+
+    document.querySelectorAll('.rate-input').forEach(el => el.style.display = 'flex');
+    $('traiteurFee').closest('.rate-input').style.opacity = traiteurOn ? 1 : .4;
+    $('nettoyageFee').closest('.rate-input').style.opacity = nettoyageOn ? 1 : .4;
+    $('coutNettoyageReel').closest('.rate-input').style.opacity = nettoyageOn ? 1 : .4;
+    $('materielAchatFee').closest('.rate-input').style.opacity = materielAchatOn ? 1 : .4;
+    $('materielCadeauxFee').closest('.rate-input').style.opacity = materielCadeauxOn ? 1 : .4;
+    $('materielPretFee').closest('.rate-input').style.opacity = materielPretOn ? 1 : .4;
+    $('locationSalleFee').closest('.rate-input').style.opacity = locationSalleOn ? 1 : .4;
+    $('boissonRate').closest('.rate-input').style.opacity = boissonOn ? 1 : .4;
+
+    const materielParts = [];
+    if (materielAchatOn) materielParts.push(`achat ${fmt(materielAchat)}`);
+    if (materielCadeauxOn) materielParts.push(`cadeaux ${fmt(materielCadeaux)}`);
+    if (materielPretOn) materielParts.push(`prêt ${fmt(materielPret)}`);
+
+    const prixDevis = base + garantieConsoFee + equipe + locationSalle + animSimple + animSurMesureFacture + traiteur + traiteurReventeTotal + nettoyage + materiel;
+
+    const items = [
+      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, warn: tarifNonDefini ? '⚠ tarif à 0 €/h : à renseigner dans « Créneau »' : null, val: base, on: true },
+      { label: `Garantie de consommation`, val: garantieConsoFee, on: garantieConsoOn },
+      { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked },
+      { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn },
+      { label: `Animation simple`, sub: `${heures}h × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${isEscapeBox ? ' + 80€ Escape Box' : ''} + ${animSimplePrepVal}€ préparation`, val: animSimple, on: animSimpleOn },
+      { label: `Animation sur mesure (forfait)`, val: animSurMesureFacture, on: animSurMesureOn },
+      { label: `Gestion traiteur (forfait)`, val: traiteur, on: traiteurOn },
+      { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers}€`, val: traiteurReventeTotal, on: traiteurNourritureOn },
+      { label: `Nettoyage (forfait)`, val: nettoyage, on: nettoyageOn },
+      { label: `Matériel`, sub: materielParts.join(', '), val: materiel, on: materielOn },
+    ];
+
+    // Détail pour le devis client — items avec TVA par poste (Matériel scindé)
+    const tvaRate = id => parseFloat($(id).value) || 0;
+    const clientItems = [
+      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, val: base, on: true, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
+      { label: `Garantie de consommation`, val: garantieConsoFee, on: garantieConsoOn, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
+      { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked, tva: tvaRate('tvaEquipe'), group: 'Service Bar' },
+      { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn, tva: tvaRate('tvaLocationSalle'), group: 'Service Bar' },
+      { label: `Animation simple`, sub: `${heures}h × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${isEscapeBox ? ' + 80€ Escape Box' : ''} + ${animSimplePrepVal}€ préparation`, val: animSimple, on: animSimpleOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
+      { label: `Animation sur mesure`, val: animSurMesureFacture, on: animSurMesureOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
+      { label: `Gestion traiteur`, val: traiteur, on: traiteurOn, tva: tvaRate('tvaTraiteur'), group: 'Service Traiteur' },
+      { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers.toFixed(2)}€`, val: traiteurReventeTotal, on: traiteurNourritureOn, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' },
+      { label: `Nettoyage`, val: nettoyage, on: nettoyageOn, tva: tvaRate('tvaNettoyage'), group: 'Service Entretien' },
+    ];
+    if (materielAchatOn) clientItems.push({ label: 'Achat de matériel', val: materielAchat, on: true, tva: tvaRate('tvaMaterielAchat'), group: 'Service Matériel' });
+    if (materielCadeauxOn) clientItems.push({ label: 'Cadeaux gagnants', val: materielCadeaux, on: true, tva: tvaRate('tvaMaterielCadeaux'), group: 'Service Matériel' });
+    if (materielPretOn) clientItems.push({ label: 'Prêt de matériel', val: materielPret, on: true, tva: tvaRate('tvaMaterielPret'), group: 'Service Matériel' });
+
+    $('lines').innerHTML = items
+      .filter(i => i.on)
+      .map(i => `<div class="line-item"><div class="line-main"><span>${i.label}</span><span class="val">${fmt(i.val)}</span></div>${i.sub ? `<div class="line-sub">${i.sub}</div>` : ''}${i.warn ? `<div class="line-sub" style="color:var(--danger); opacity:1;">${i.warn}</div>` : ''}</div>`)
+      .join('');
+
+    // ----- Calcul HTVA / TVA / TVAC pour l'affichage et pour la marge -----
+    const tvaInclus = $('tvaInclus').checked;
+    const clientBreakdown = clientItems.filter(i => i.on).map(it => {
+      const htva = round2(tvaInclus ? it.val / (1 + it.tva / 100) : it.val);
+      const tvac = round2(tvaInclus ? it.val : it.val * (1 + it.tva / 100));
+      return { ...it, htva, tvac, tvaAmount: round2(tvac - htva) };
+    });
+    const totalHTVA = round2(clientBreakdown.reduce((s, x) => s + x.htva, 0));
+    const totalTVAC = round2(clientBreakdown.reduce((s, x) => s + x.tvac, 0));
+    const totalTVA = round2(totalTVAC - totalHTVA);
+    const tvaSummary = {};
+    clientBreakdown.forEach(x => {
+      const key = x.tva.toFixed(0);
+      tvaSummary[key] = round2((tvaSummary[key] || 0) + x.tvaAmount);
+    });
+
+    // Gros total HTVA en haut
+    $('total').textContent = fmt(totalHTVA);
+    $('perPerson').textContent = personnes > 0
+      ? `soit ${fmt(totalHTVA / personnes)} / personne HTVA`
+      : '';
+
+    const sMN = document.getElementById('surMesureNote');
+    if (sMN) sMN.style.display = ($('animSurMesure').checked && animSurMesureFacture === 0) ? 'block' : 'none';
+
+    const typeNoteParts = [];
+    if (animTypeBingo) typeNoteParts.push('Bingo : vente de cartes en complément de l\'animation — marge non chiffrée ici, à ajouter dans « Coûts réels » si besoin.');
+    if (animTypeBlindtest) typeNoteParts.push('Blind Test : réalisé via une application (Geroge ou autres).');
+    if (animTypeKaraoke) typeNoteParts.push('Karaoké : matériel/support à vérifier avant l\'événement.');
+    if (animTypeApero) typeNoteParts.push('Apéro : boissons/grignotage à prévoir — pensez à la vente de boisson ci-dessous si applicable.');
+    if (isEscapeBox) typeNoteParts.push('Escape Box : +80 € facturés. Le coût réel de 50 € est prérempli ; la marge indicative est donc de 30 € avant autres coûts.');
+    $('animSimpleTypeNote').style.display = typeNoteParts.length ? 'block' : 'none';
+    $('animSimpleTypeNote').innerHTML = typeNoteParts.map(t => `<div>${t}</div>`).join('');
+
+    // ---------- 2. RECETTES COMPLÉMENTAIRES (non facturées, empochées) ----------
+    const recetteInscriptionsAnim = animSimpleOn ? personnes * recetteInscriptionsAnimRate : 0;
+    const recetteVentesCartes = animTypeBingo ? personnes * recetteVentesCartesRate : 0;
+    // Achat traiteur : alimente les coûts réels. La marge traiteur n'est PAS ajoutée aux recettes
+    // complémentaires car la revente est déjà incluse dans le prix du devis (sinon double comptage).
+    const coutTraiteurAchatPersManuel = parseFloat($('coutTraiteurAchatPers').value) || 0;
+    // Achat coût réel HTVA (la TVA 6 % est récupérable, donc hors coût)
+    const coutTraiteurAchatPers = coutTraiteurAchatPersManuel > 0 ? coutTraiteurAchatPersManuel : traiteurPrixHTVA;
+    const recettesComplementaires = margeBoisson + recetteInscriptionsAnim + recetteVentesCartes;
+    const recettesLines = [];
+    if (boissonOn) recettesLines.push({ label: 'Marge boissons', sub: `${personnes} invités × ${heures}h × ${boissonRateVal}€/h/pers.`, val: margeBoisson });
+    if (animSimpleOn && recetteInscriptionsAnimRate > 0) recettesLines.push({ label: 'Inscriptions animations', sub: `${personnes} invités × ${recetteInscriptionsAnimRate}€/pers.`, val: recetteInscriptionsAnim });
+    if (animTypeBingo && recetteVentesCartesRate > 0) recettesLines.push({ label: 'Ventes de cartes (Bingo)', sub: `${personnes} invités × ${recetteVentesCartesRate}€/pers.`, val: recetteVentesCartes });
+    if (recettesLines.length === 0) recettesLines.push({ label: 'Aucune recette complémentaire', val: 0 });
+    $('recettesLines').innerHTML = recettesLines
+      .map(i => `<div class="line-item"><div class="line-main"><span>${i.label}</span><span class="val">${fmt(i.val)}</span></div>${i.sub ? `<div class="line-sub">${i.sub}</div>` : ''}</div>`)
+      .join('');
+    $('recettesVal').textContent = fmt(recettesComplementaires);
+
+    // ---------- 3. COÛTS RÉELS DU CHECKPOINT (indépendants du devis) ----------
+    const fraisEnergieRateVal = parseFloat($('fraisEnergieRate').value) || 0;
+    const fraisAssuranceVal = parseFloat($('fraisAssurance').value) || 0;
+    const fraisPermisVal = parseFloat($('fraisPermis').value) || 0;
+    const coutEnergie = heures * fraisEnergieRateVal;
+    const coutPersonnelHeureVal = parseFloat($('coutPersonnelHeure').value) || 0;
+    // Personnel d'animation :
+    //  - Si Service Bar présent, l'animateur principal est l'un de l'équipe (déjà compté),
+    //    on ajoute seulement l'animateur supplémentaire quand il est coché.
+    //  - Si pas de Service Bar (ou équipe à 0), on compte tous les animateurs facturés (1 ou 2).
+    let animatorsInCost = 0;
+    if (animSimpleOn) {
+      if ($('equipe').checked && equipeStaff > 0) {
+        animatorsInCost = animateurSuppOn ? 1 : 0;
+      } else {
+        animatorsInCost = nbAnimateurs; // 1 sans supp, 2 avec supp
+      }
+    }
+    const coutPersonnelCount = ($('equipe').checked ? equipeStaff : 0) + animatorsInCost;
+    const coutPersonnel = coutPersonnelCount * heures * coutPersonnelHeureVal;
+    const coutNettoyageVal = nettoyageOn ? (parseFloat($('coutNettoyageReel').value) || 0) : 0;
+    const coutTraiteurAchatTotal = traiteurNourritureOn ? personnes * coutTraiteurAchatPers : 0;
+    const coutMaterielAchatVal = materielAchatOn ? (parseFloat($('coutMaterielAchatReel').value) || 0) : 0;
+    const coutMaterielCadeauxVal = materielCadeauxOn ? (parseFloat($('coutMaterielCadeauxReel').value) || 0) : 0;
+    const coutMaterielPretVal = materielPretOn ? (parseFloat($('coutMaterielPretReel').value) || 0) : 0;
+    const coutMaterielVal = coutMaterielAchatVal + coutMaterielCadeauxVal + coutMaterielPretVal;
+    const coutAnimationVal = animSimpleOn ? (parseFloat($('coutAnimationReel').value) || 0) : 0;
+    const coutAnimSurMesureVal = animSurMesureOn ? (parseFloat($('coutAnimSurMesure').value) || 0) : 0;
+
+    const coutsReels = coutEnergie + fraisAssuranceVal + fraisPermisVal + coutPersonnel + coutNettoyageVal + coutMaterielVal + coutAnimationVal + coutAnimSurMesureVal + coutTraiteurAchatTotal;
+
+    const coutsLines = [
+      { label: 'Énergie', sub: `${heures}h × ${fraisEnergieRateVal}€/h`, val: coutEnergie },
+      { label: 'Assurances', val: fraisAssuranceVal },
+      { label: 'Permis / accord commune', val: fraisPermisVal },
+      { label: 'Personnel', sub: `${coutPersonnelCount} personne(s) × ${heures}h × ${coutPersonnelHeureVal}€/h`, val: coutPersonnel },
+      { label: 'Nettoyage', val: coutNettoyageVal, on: nettoyageOn },
+    ];
+    if (materielOn) {
+      const parts = [];
+      if (materielAchatOn) parts.push(`achat ${fmt(coutMaterielAchatVal)}`);
+      if (materielCadeauxOn) parts.push(`cadeaux ${fmt(coutMaterielCadeauxVal)}`);
+      if (materielPretOn) parts.push(`prêt ${fmt(coutMaterielPretVal)}`);
+      coutsLines.push({ label: 'Matériel', sub: parts.join(', '), val: coutMaterielVal });
+    }
+    if (animSimpleOn) coutsLines.push({ label: 'Animation', sub: isEscapeBox ? 'Escape Box' : '', val: coutAnimationVal });
+    if (animSurMesureOn) coutsLines.push({ label: 'Animation sur mesure — conception', val: coutAnimSurMesureVal });
+    if (traiteurNourritureOn) coutsLines.push({ label: 'Achat nourriture (traiteur)', sub: `${personnes} invités × ${coutTraiteurAchatPers}€`, val: coutTraiteurAchatTotal });
+    $('coutsLines').innerHTML = coutsLines
+      .map(i => `<div class="line-item"><div class="line-main"><span>${i.label}</span><span class="val">${fmt(i.val)}</span></div>${i.sub ? `<div class="line-sub">${i.sub}</div>` : ''}</div>`)
+      .join('');
+    $('seuilVal').textContent = fmt(coutsReels);
+
+    // ---------- Affichage HTVA / TVA / TVAC ----------
+    const tvaBreakdownHTML = `
+      <div style="margin-top:10px; font-size:12.5px; color:var(--ink-soft); display:grid; gap:4px;">
+        ${Object.entries(tvaSummary).sort().map(([rate, amt]) => `<div style="display:flex; justify-content:space-between;"><span>TVA ${rate} %</span><span style="font-variant-numeric:tabular-nums;">${fmt(amt)}</span></div>`).join('')}
+        <div style="display:flex; justify-content:space-between; color:var(--ink); padding-top:4px; border-top:1px dashed var(--line-soft);"><span>Total TVA</span><span style="font-variant-numeric:tabular-nums;">${fmt(totalTVA)}</span></div>
+        <div style="display:flex; justify-content:space-between; font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--felt-dark); padding-top:6px; margin-top:4px; border-top:2px solid var(--felt);"><span>Total TVAC — à payer par le client</span><span style="font-variant-numeric:tabular-nums;">${fmt(totalTVAC)}</span></div>
+      </div>`;
+    const tvaBreakdownEl = document.getElementById('tvaBreakdown');
+    if (tvaBreakdownEl) tvaBreakdownEl.innerHTML = tvaBreakdownHTML;
+
+    // ---------- 4. MARGE ESTIMÉE — calculée toujours sur HTVA ----------
+    const beneficeNet = totalHTVA + recettesComplementaires - coutsReels;
+    $('beneficeNetVal').textContent = fmt(beneficeNet);
+    $('beneficeNetVal').style.color = beneficeNet < 0 ? 'var(--danger)' : 'var(--felt-dark)';
+    $('seuilWarning').style.display = beneficeNet < 0 ? 'block' : 'none';
+    $('teambuildingOuvertNote').style.display = (window.activePreset === 'teambuilding' && creneauChoix === 'ouvert') ? 'block' : 'none';
+
+    // ---------- 5. POINTS À VÉRIFIER AVANT ENVOI ----------
+    const equipeOn = $('equipe').checked;
+    const alerts = [];
+    if (tarifNonDefini) alerts.push({ level: 'error', text: `Le tarif horaire « ${creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'} » est à 0 €/h : le renseigner dans « Créneau ».` });
+    if (heures === 0) alerts.push({ level: 'error', text: `Le nombre d'heures est à 0.` });
+    if (creneauChoix === 'ferme' && !nettoyageOn) alerts.push({ level: 'warn', text: `Hors ouverture, le nettoyage n'est pas coché : personne d'autre ne passe derrière.` });
+    if (creneauChoix === 'ouvert' && (equipeOn || nettoyageOn) && !(window.activePreset === 'teambuilding' && !window.presetDirty)) alerts.push({ level: 'warn', text: `Pendant l'ouverture, l'équipe et le nettoyage sont normalement décochés : confirmer qu'ils sont voulus.` });
+    if (locationSalleOn && locationSalleFeeVal === 0) alerts.push({ level: 'warn', text: `Location salle cochée à 0 €.` });
+    const materielAZero = [];
+    if (materielAchatOn && materielAchat === 0) materielAZero.push('achat');
+    if (materielCadeauxOn && materielCadeaux === 0) materielAZero.push('cadeaux');
+    if (materielPretOn && materielPret === 0) materielAZero.push('prêt');
+    if (materielAZero.length) alerts.push({ level: 'warn', text: `Matériel coché mais à 0 € (${materielAZero.join(', ')}) : montant à définir.` });
+    if (traiteurNourritureOn && traiteurReventePers > 0 && coutTraiteurAchatPers === 0) alerts.push({ level: 'error', text: `Traiteur : une revente est facturée (${fmt(traiteurReventePers)}/pers.) mais aucun coût d'achat n'est encodé. La marge est artificiellement gonflée du montant de la revente. Renseigner « Prix du traiteur par personne (HTVA) » ou l'achat manuel.` });
+    if ((materielAchat + materielCadeaux) > 0 && coutMaterielVal === 0) alerts.push({ level: 'warn', text: `Du matériel est facturé mais son coût réel n'est pas saisi : la marge est surestimée.` });
+    if (equipeOn && equipeStaff > 0 && personnes > 0) {
+      const conseillees = Math.ceil(personnes / 15);
+      if (equipeStaff < conseillees) alerts.push({ level: 'info', text: `${conseillees} personnes d'équipe conseillées pour ${personnes} invités (1 pour 15), ${equipeStaff} saisie${equipeStaff > 1 ? 's' : ''}. Indicatif, pas une obligation.` });
+    }
+    if (animSimpleOn && (!equipeOn || equipeStaff === 0)) alerts.push({ level: 'info', text: `Animation sans équipe cochée : un animateur est compté dans le coût du personnel.` });
+    if (creneauChoix === 'ouvert' && !garantieConsoOn) alerts.push({ level: 'info', text: `Pendant l'ouverture, le modèle privilégié est la garantie de consommation. Pensez à cocher « Garantie de consommation » dans Service Bar.` });
+    if (fraisAssuranceVal === 0 || fraisPermisVal === 0) alerts.push({ level: 'info', text: `Assurances ou permis à 0 € dans les coûts réels : confirmer qu'ils ne s'appliquent pas à cet événement.` });
+
+    // Contrôles automatiques supplémentaires
+    if (personnes === 0) alerts.push({ level: 'warn', text: `Nombre d'invités à 0 : impossible de calculer les recettes par personne (boissons, traiteur, inscriptions).` });
+    if (heures > 12) alerts.push({ level: 'info', text: `${heures} h : créneau inhabituel (> 12 h). Vérifier.` });
+    if (equipeOn && equipeStaff === 0) alerts.push({ level: 'error', text: `Service Bar coché mais 0 personne d'équipe : incohérent.` });
+    if (animSimpleOn && animSimpleRate === 0) alerts.push({ level: 'warn', text: `Animation simple cochée mais tarif horaire à 0 €/h (Paramètres > Service Animation).` });
+    if (traiteurOn && (parseFloat($('traiteurFee').value) || 0) === 0) alerts.push({ level: 'warn', text: `Gestion traiteur cochée mais forfait à 0 €.` });
+    if (traiteurNourritureOn && traiteurReventePers === 0) alerts.push({ level: 'error', text: `Traiteur coché mais aucun prix de revente ni prix d'achat traiteur n'est encodé.` });
+    if (traiteurReventePersManuel > 0 && traiteurPrixHTVA > 0 && Math.abs(traiteurReventePersManuel - traiteurReventeAuto) > 0.5) alerts.push({ level: 'info', text: `Traiteur : la revente manuelle (${fmt(traiteurReventePersManuel)}) remplace le calcul automatique (${fmt(traiteurReventeAuto)}) basé sur +15 % du prix HTVA. Vérifier que c'est voulu.` });
+
+    // Contrôles de dates et de saisie
+    const devisDateVal = $('devisDate').value;
+    const eventDateVal = $('eventDate').value;
+    const devisNameVal = $('devisName').value.trim();
+    const clientNameVal = $('clientName').value.trim();
+    const emailVal = $('clientEmail').value.trim();
+    if (!devisNameVal) alerts.push({ level: 'error', text: `Nom du devis manquant : indiquer un libellé (ex. « Anniversaire Dupont 23/11 »).` });
+    if (!clientNameVal) alerts.push({ level: 'warn', text: `Nom du client manquant : à renseigner avant d'envoyer.` });
+    if (emailVal && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) alerts.push({ level: 'warn', text: `Adresse e-mail client mal formée : « ${emailVal} ».` });
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (devisDateVal) {
+      const d = new Date(devisDateVal);
+      if (!isNaN(d) && d > today) alerts.push({ level: 'info', text: `Date du devis dans le futur (${fmtDate(devisDateVal)}).` });
+    }
+    if (eventDateVal) {
+      const e = new Date(eventDateVal);
+      if (!isNaN(e) && e < today) alerts.push({ level: 'warn', text: `La date de l'événement (${fmtDate(eventDateVal)}) est déjà passée.` });
+      if (devisDateVal) {
+        const d = new Date(devisDateVal);
+        if (!isNaN(d) && !isNaN(e) && e < d) alerts.push({ level: 'error', text: `La date de l'événement (${fmtDate(eventDateVal)}) est antérieure à la date du devis (${fmtDate(devisDateVal)}).` });
+      }
+    } else if (devisNameVal) {
+      alerts.push({ level: 'info', text: `Date de l'événement non renseignée.` });
+    }
+    if (garantieConsoOn && garantieConsoFee === 0) alerts.push({ level: 'warn', text: `Garantie de consommation cochée mais montant à 0 €.` });
+    if (animSurMesureOn && animSurMesureFacture === 0) alerts.push({ level: 'warn', text: `Animation sur mesure cochée mais montant facturé à 0 € (Paramètres).` });
+    // Coûts réels manquants quand la prestation est facturée
+    if ((equipeOn || animSimpleOn) && coutPersonnelHeureVal === 0) alerts.push({ level: 'warn', text: `Coût réel du personnel à 0 €/h : la marge personnel est surestimée.` });
+    if (nettoyageOn && coutNettoyageVal === 0) alerts.push({ level: 'warn', text: `Nettoyage facturé mais coût réel à 0 € (Paramètres > Coûts réels).` });
+    if (animSimpleOn && !isEscapeBox && coutAnimationVal === 0) alerts.push({ level: 'info', text: `Animation facturée mais coût réel à 0 € : vérifier si c'est volontaire.` });
+    if (animSurMesureOn && coutAnimSurMesureVal === 0) alerts.push({ level: 'warn', text: `Animation sur mesure facturée mais coût de conception à 0 € : la marge est surestimée.` });
+    if (materielAchatOn && materielAchat > 0 && coutMaterielAchatVal === 0) alerts.push({ level: 'warn', text: `Achat de matériel facturé mais coût réel à 0 €.` });
+    if (materielCadeauxOn && materielCadeaux > 0 && coutMaterielCadeauxVal === 0) alerts.push({ level: 'warn', text: `Cadeaux gagnants facturés mais coût réel à 0 €.` });
+    const order = { error: 0, warn: 1, info: 2 };
+    const labels = { error: 'À corriger', warn: 'À vérifier', info: 'Info' };
+    alerts.sort((a, b) => order[a.level] - order[b.level]);
+    $('alerts').innerHTML = alerts.length
+      ? alerts.map(a => `<li class="alert ${a.level}"><span class="dot" aria-hidden="true"></span><span><strong>${labels[a.level]}</strong>${a.text}</span></li>`).join('')
+      : `<li class="alert-ok">Rien à signaler.</li>`;
+    const blockers = alerts.filter(a => a.level === 'error').map(a => a.text);
+    if (beneficeNet < 0) blockers.push(`La marge estimée est négative : prévenir l'équipe avant d'envoyer.`);
+
+    // État visuel du bouton PDF client selon les blockers
+    const pdfBtn = $('btnPdfDevis');
+    if (pdfBtn) {
+      if (blockers.length) {
+        pdfBtn.classList.add('btn-blocked');
+        pdfBtn.title = `PDF bloqué : ${blockers.length} erreur(s) à corriger`;
+      } else {
+        pdfBtn.classList.remove('btn-blocked');
+        pdfBtn.title = '';
+      }
+    }
+
+    window.lastCalc = {
+      total: prixDevis, recettesComplementaires, seuilTotal: coutsReels, beneficeNet,
+      items: items.filter(i => i.on), recettesLines, coutsLines,
+      heures, personnes, creneauChoix, alerts, blockers,
+      clientBreakdown, totalHTVA, totalTVAC, tvaSummary, tvaInclus,
+    };
+
+    // Unité du tarif "Location salle" dans Paramètres, suit le mode choisi dans Prestations
+    const lsUnit = $('locationSalleUnit');
+    if (lsUnit) lsUnit.textContent = locationSalleMode === 'heure' ? '€/h' : '€ forfait';
+
+    // Résumés affichés dans l'en-tête des accordéons quand ils sont fermés
+    const sH = $('summHoraires');
+    if (sH) sH.textContent = heures > 0 ? `${heures} h ${creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'}` : 'à renseigner';
+    const sI = $('summInvites');
+    if (sI) sI.textContent = personnes > 0 ? `${personnes} invités` : 'à renseigner';
+    const sT = $('summType');
+    const presetLabels = { anniversaire: 'Anniversaire', atelier: 'Atelier', reunion: 'Réunion Extra', teambuilding: 'Teambuilding' };
+    if (sT) sT.textContent = window.activePreset
+      ? (presetLabels[window.activePreset] || '—') + (window.presetDirty ? ' (personnalisé)' : '')
+      : 'aucun forfait';
+    // Marquer visuellement le bouton forfait actif comme personnalisé
+    document.querySelectorAll('.preset-btn').forEach(b => {
+      const isActive = b.dataset.preset === window.activePreset;
+      b.classList.toggle('active', isActive);
+      b.classList.toggle('dirty', isActive && window.presetDirty);
+    });
+    const sP = $('summPrestations');
+    if (sP) {
+      const prestas = [];
+      if ($('equipe').checked) prestas.push('équipe');
+      if ($('animSimple').checked) prestas.push('animation');
+      if (traiteurOn) prestas.push('traiteur');
+      if (nettoyageOn) prestas.push('nettoyage');
+      if (materielOn) prestas.push('matériel');
+      sP.textContent = prestas.length ? prestas.join(' + ') : 'aucune';
+    }
+  }
+
+  document.querySelectorAll('input').forEach(el => el.addEventListener('input', calc));
+
+  // Marquage « forfait personnalisé » : dès qu'un champ contrôlé par un forfait change,
+  // on signale que l'état ne correspond plus au forfait appliqué.
+  const PRESET_FIELDS = ['heures','personnes','equipe','animSimple','animSurMesure','traiteur','traiteurNourriture','nettoyage','materielAchatOn','materielCadeauxOn','materielPretOn','boisson'];
+  PRESET_FIELDS.forEach(id => {
+    const el = $(id);
+    if (el) el.addEventListener('change', () => {
+      if (window.activePreset && !window._presetApplying) window.presetDirty = true;
+    });
+  });
+  document.querySelectorAll('input[name="creneau"]').forEach(el => el.addEventListener('change', () => {
+    if (window.activePreset && !window._presetApplying) window.presetDirty = true;
+  }));
+  // Coût réel de l'animation : 50 € préremplis avec l'Escape Box, remis à 0 si on la décoche (sauf saisie manuelle)
+  const ESCAPE_COST = 50;
+  $('coutAnimationReel').addEventListener('input', () => { $('coutAnimationReel').dataset.auto = 'false'; });
+  $('animTypeEscapebox').addEventListener('change', () => {
+    const el = $('coutAnimationReel');
+    const manual = el.dataset.auto === 'false' && (parseFloat(el.value) || 0) !== 0;
+    if ($('animTypeEscapebox').checked) {
+      if (!manual) { el.value = ESCAPE_COST; el.dataset.auto = 'true'; }
+    } else if (el.dataset.auto === 'true') {
+      el.value = 0;
+    }
+    calc();
+  });
+  document.querySelectorAll('select').forEach(el => el.addEventListener('change', calc));
+
+  // Le changement manuel de créneau ne modifie plus Nettoyage ni Présence équipe —
+  // ces préréglages ne s'appliquent que lors du choix d'un forfait rapide,
+  // pour ne pas écraser un choix manuel du devisier.
+
+  const presets = {
+    anniversaire: {
+      heures: 3,
+      creneau: 'ferme',
+      personnes: 12,
+      equipe: true,
+      animSimple: true,
+      animSurMesure: false, animateurSupplementaire: false,
+      traiteur: false,
+      nettoyage: true,
+      materielAchat: true,
+      materielCadeaux: false,
+      materielPret: false,
+      boisson: true,
+    },
+    atelier: {
+      heures: 2,
+      creneau: 'ferme',
+      personnes: 10,
+      equipe: false,
+      animSimple: false,
+      animSurMesure: false, animateurSupplementaire: false,
+      traiteur: false,
+      nettoyage: true,
+      materielAchat: false,
+      materielCadeaux: false,
+      materielPret: true,
+      boisson: false,
+    },
+    reunion: {
+      heures: 4,
+      creneau: 'ferme',
+      personnes: 15,
+      equipe: true,
+      animSimple: false,
+      animSurMesure: false, animateurSupplementaire: false,
+      traiteur: false,
+      nettoyage: true,
+      materielAchat: false,
+      materielCadeaux: false,
+      materielPret: false,
+      boisson: false,
+    },
+    teambuilding: {
+      heures: 4,
+      creneau: 'ouvert',
+      personnes: 20,
+      equipe: true,
+      animSimple: true,
+      animSurMesure: false,
+      traiteur: true,
+      traiteurNourriture: true,
+      nettoyage: true,
+      materielAchat: false,
+      materielCadeaux: false,
+      materielPret: false,
+      boisson: true,
+    },
+  };
+
+  function applyPreset(name) {
+    const p = presets[name];
+    if (!p) return;
+    window._presetApplying = true;
+    window.activePreset = name;
+    window.presetDirty = false;
+    $('heures').value = p.heures;
+    $('personnes').value = p.personnes;
+    document.querySelector(`input[name="creneau"][value="${p.creneau}"]`).checked = true;
+    $('equipe').checked = p.equipe;
+    $('animSimple').checked = p.animSimple;
+    $('animateurSupplementaire').checked = false;
+    $('animTypeBingo').checked = false;
+    $('animTypeBlindtest').checked = false;
+    $('animTypeKaraoke').checked = false;
+    $('animTypeApero').checked = false;
+    $('animTypeEscapebox').checked = false;
+    if ($('coutAnimationReel').dataset.auto === 'true') $('coutAnimationReel').value = 0;
+    $('locationSalle').checked = false;
+    $('equipeStaff').value = 1;
+    $('animSurMesure').checked = p.animSurMesure;
+    $('garantieConso').checked = !!p.garantieConso;
+    $('traiteur').checked = p.traiteur;
+    $('traiteurNourriture').checked = !!p.traiteurNourriture;
+    $('nettoyage').checked = p.nettoyage;
+    $('materielAchatOn').checked = p.materielAchat;
+    $('materielCadeauxOn').checked = p.materielCadeaux;
+    $('materielPretOn').checked = p.materielPret;
+    $('boisson').checked = p.boisson;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.preset-btn[data-preset="${name}"]`).classList.add('active');
+    window._presetApplying = false;
+    calc();
+  }
+
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+  });
+  calc();
+
+  // ---- Devis : état, sauvegarde, chargement, PDF ----
+  const FIELDS = [
+    ['heures','number'], ['personnes','number'], ['rateFerme','number'], ['rateOuvert','number'],
+    ['equipe','checkbox'], ['equipeRate','number'], ['equipeStaff','number'],
+    ['locationSalle','checkbox'], ['locationSalleFee','number'], ['locationSalleMode','select'],
+    ['animSimple','checkbox'], ['animTypeBingo','checkbox'], ['animTypeBlindtest','checkbox'], ['animTypeKaraoke','checkbox'], ['animTypeApero','checkbox'], ['animTypeEscapebox','checkbox'], ['animSimpleRate','number'], ['animSimplePrep','number'],
+    ['animateurSupplementaire','checkbox'],
+    ['animSurMesure','checkbox'], ['animSurMesureFacture','number'], ['coutAnimSurMesure','number'],
+    ['garantieConso','checkbox'], ['garantieConsoFee','number'],
+    ['traiteur','checkbox'], ['traiteurFee','number'],
+    ['traiteurNourriture','checkbox'], ['traiteurPrixHTVA','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
+    ['nettoyage','checkbox'], ['nettoyageFee','number'],
+    ['fraisEnergieRate','number'], ['fraisAssurance','number'], ['fraisPermis','number'],
+    ['coutPersonnelHeure','number'], ['coutNettoyageReel','number'], ['coutMaterielAchatReel','number'], ['coutMaterielCadeauxReel','number'], ['coutMaterielPretReel','number'], ['coutAnimationReel','number'],
+    ['materielAchatOn','checkbox'], ['materielAchatFee','number'],
+    ['materielCadeauxOn','checkbox'], ['materielCadeauxFee','number'],
+    ['materielPretOn','checkbox'], ['materielPretFee','number'],
+    ['boisson','checkbox'], ['boissonRate','number'],
+    ['recetteInscriptionsAnim','number'], ['recetteVentesCartes','number'], ['recetteMargeTraiteur','number'],
+    ['tvaInclus','checkbox'],
+    ['tvaAccesBar','number'], ['tvaEquipe','number'], ['tvaLocationSalle','number'], ['tvaAnimation','number'],
+    ['tvaTraiteur','number'], ['tvaNettoyage','number'], ['tvaMaterielAchat','number'], ['tvaMaterielCadeaux','number'],
+    ['tvaMaterielPret','number'], ['tvaNourriture','number'], ['tvaAchatTraiteur','number'],
+    ['devisRef','text'], ['clientName','text'], ['clientEmail','text'], ['devisDate','text'], ['eventDate','text'],
+    ['clientAddress','text'], ['devisNotes','text'],
+  ];
+
+  function getState() {
+    const state = { creneau: document.querySelector('input[name="creneau"]:checked').value, activePreset: window.activePreset || null };
+    FIELDS.forEach(([id, type]) => {
+      const el = $(id);
+      state[id] = type === 'checkbox' ? el.checked : el.value;
+    });
+    return state;
+  }
+
+  function setState(state) {
+    if (!state) return;
+    window.activePreset = state.activePreset || null;
+    if (state.creneau) {
+      const r = document.querySelector(`input[name="creneau"][value="${state.creneau}"]`);
+      if (r) r.checked = true;
+    }
+    FIELDS.forEach(([id, type]) => {
+      if (!(id in state)) return;
+      const el = $(id);
+      if (type === 'checkbox') el.checked = !!state[id];
+      else el.value = state[id];
+    });
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === window.activePreset));
+    calc();
+  }
+
+  function slugify(s) {
+    return (s || 'devis').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'devis';
+  }
+
+  function showDevisStatus(msg, isError) {
+    const el = $('devisStatus');
+    el.textContent = msg;
+    el.style.color = isError ? 'var(--danger)' : 'var(--ink-soft)';
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  function renderDevisList(docs) {
+    const list = $('devisList');
+    $('devisCount').textContent = docs && docs.length ? `(${docs.length})` : '';
+    if (!docs || docs.length === 0) {
+      list.innerHTML = `<div style="font-size:12px; color:var(--ink-soft);">Aucun devis enregistré.</div>`;
+      return;
+    }
+    // Repérer la dernière version par nom de devis (docs déjà triés par savedAt desc)
+    const seenNames = new Set();
+    const latestByName = new Set();
+    docs.forEach(d => {
+      const n = (d.data() || {}).name || d.id;
+      if (!seenNames.has(n)) { latestByName.add(d.id); seenNames.add(n); }
+    });
+    // Compter le nombre de versions par nom
+    const versionsPerName = {};
+    docs.forEach(d => {
+      const n = (d.data() || {}).name || d.id;
+      versionsPerName[n] = (versionsPerName[n] || 0) + 1;
+    });
+    const versionIndex = {}; // numéro de version dans l'ordre chronologique inverse (1 = plus récente)
+    const seenCount = {};
+    docs.forEach(d => {
+      const n = (d.data() || {}).name || d.id;
+      seenCount[n] = (seenCount[n] || 0) + 1;
+      versionIndex[d.id] = seenCount[n];
+    });
+    list.innerHTML = docs.map(d => {
+      const data = d.data() || {};
+      const name = (data.name || d.id);
+      const isLatest = latestByName.has(d.id);
+      const total = versionsPerName[name] || 1;
+      const vNum = versionIndex[d.id];
+      const vLabel = total > 1 ? ` <span style="font-size:10.5px; color:var(--ink-soft);">v${total - vNum + 1}/${total}</span>` : '';
+      const dateTime = data.savedAt ? new Date(data.savedAt).toLocaleString('fr-BE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+      const totalStr = typeof data.total === 'number' ? fmt(data.total) : '';
+      const marge = typeof data.margeEstimee === 'number' ? ` — marge <span style="color:${data.margeEstimee < 0 ? 'var(--danger)' : 'inherit'}">${fmt(data.margeEstimee)}</span>` : '';
+      const latestBadge = isLatest && total > 1 ? ` <span style="font-size:10px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--felt); border:1px solid var(--felt); padding:1px 5px; border-radius:3px; vertical-align:middle;">dernière</span>` : '';
+      return `<div class="devis-row"${isLatest && total > 1 ? ' style="background:color-mix(in srgb, var(--felt) 4%, transparent);"' : ''}>
+        <div><strong>${name.replace(/</g,'&lt;')}</strong>${vLabel}${latestBadge} <span class="meta">${data.clientName ? esc(data.clientName) + ' — ' : ''}${data.eventDate ? 'événement le ' + fmtDate(data.eventDate) + ' — ' : ''}${dateTime} — ${totalStr}${marge}</span></div>
+        <div class="devis-row-actions">
+          <button type="button" data-load="${d.id}">Ouvrir</button>
+          <button type="button" data-del="${d.id}">Supprimer</button>
+        </div>
+      </div>`;
+    }).join('');
+    list.querySelectorAll('[data-load]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const db = await safeUse('db');
+        if (!db) return;
+        const snap = await db.doc(`devis/${btn.dataset.load}`).get();
+        if (snap.exists) {
+          const data = snap.data();
+          blankForm();
+          setState(data.state);
+          $('devisName').value = data.name || '';
+          updateClientSummary();
+          showApp();
+          showDevisStatus(`Devis « ${data.name} » ouvert.`);
+        }
+      });
+    });
+    list.querySelectorAll('[data-del]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!(await customConfirm('Supprimer ce devis ? Cette action est irréversible.'))) return;
+        const db = await safeUse('db');
+        if (!db) return;
+        await db.doc(`devis/${btn.dataset.del}`).delete();
+      });
+    });
+  }
+
+  if (typeof window.claude === 'undefined') {
+    $('devisList').innerHTML = `<div style="font-size:12px; color:var(--danger);">Fichier ouvert hors de claude.ai : l'enregistrement des devis ne fonctionne que sur la page publiée (lien de l'artefact). Le téléchargement PDF, lui, fonctionne partout.</div>`;
+  }
+
+  let devisDb = null;
+  (async () => {
+    devisDb = await safeUse('db');
+    if (!devisDb) {
+      $('devisList').innerHTML = `<div style="font-size:12px; color:var(--ink-soft);">Enregistrement des devis indisponible dans cette vue.</div>`;
+      return;
+    }
+    devisDb.collection('devis').orderBy('savedAt', 'desc').limit(30).onSnapshot(
+      snap => renderDevisList(snap.docs),
+      () => showDevisStatus('Impossible de charger les devis.', true)
+    );
+  })();
+
+  $('btnSaveDevis').addEventListener('click', async () => {
+    const name = $('devisName').value.trim();
+    if (!name) { $('clientDetails').open = true; $('devisName').focus(); showDevisStatus('Indiquez l\'intitulé du devis.', true); return; }
+    const db = devisDb || await safeUse('db');
+    if (!db) { showDevisStatus('Enregistrement indisponible dans cette vue.', true); return; }
+    calc();
+    const state = getState();
+    const id = `${slugify(name)}-${Date.now()}`;
+    try {
+      await db.doc(`devis/${id}`).set({
+        name, savedAt: Date.now(), state,
+        ref: $('devisRef').value.trim(),
+        clientName: $('clientName').value.trim(),
+        eventDate: $('eventDate').value,
+        total: window.lastCalc.total,
+        margeEstimee: window.lastCalc.beneficeNet,
+      });
+      showDevisStatus(`Devis « ${name} » enregistré.`);
+    } catch (e) {
+      showDevisStatus('Échec de l\'enregistrement.', true);
+    }
+  });
+
+  function blankForm() {
+    setState({
+      creneau: 'ferme', activePreset: null,
+      heures: 0, personnes: 0, rateFerme: 0, rateOuvert: 0,
+      equipe: false, equipeRate: 50, equipeStaff: 1,
+      locationSalle: false, locationSalleFee: 0, locationSalleMode: 'forfait',
+      animSimple: false, animTypeBingo: false, animTypeBlindtest: false, animTypeKaraoke: false, animTypeApero: false, animTypeEscapebox: false, animSimpleRate: 50, animSimplePrep: 30,
+      animSurMesure: false, animSurMesureFacture: 0, coutAnimSurMesure: 0, animateurSupplementaire: false,
+      garantieConso: false, garantieConsoFee: 0,
+      traiteur: false, traiteurFee: 60,
+      traiteurNourriture: false, traiteurPrixHTVA: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
+      nettoyage: false, nettoyageFee: 30,
+      fraisEnergieRate: 10, fraisAssurance: 0, fraisPermis: 0,
+      coutPersonnelHeure: 20, coutNettoyageReel: 30, coutMaterielAchatReel: 0, coutMaterielCadeauxReel: 0, coutMaterielPretReel: 0, coutAnimationReel: 0,
+      materielAchatOn: false, materielAchatFee: 0,
+      materielCadeauxOn: false, materielCadeauxFee: 0,
+      materielPretOn: false, materielPretFee: 0,
+      boisson: false, boissonRate: 2.5,
+      recetteInscriptionsAnim: 0, recetteVentesCartes: 0, recetteMargeTraiteur: 0,
+      tvaInclus: false,
+      tvaAccesBar: 21, tvaEquipe: 21, tvaLocationSalle: 21, tvaAnimation: 21,
+      tvaTraiteur: 21, tvaNettoyage: 21, tvaMaterielAchat: 21, tvaMaterielCadeaux: 21,
+      tvaMaterielPret: 21, tvaNourriture: 12, tvaAchatTraiteur: 6,
+      devisRef: '', clientName: '', clientEmail: '', devisDate: todayISO(), eventDate: '', clientAddress: '', devisNotes: '',
+    });
+    $('devisName').value = '';
+    $('coutAnimationReel').dataset.auto = 'true';
+    updateClientSummary();
+  }
+  function todayISO() {
+    const t = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${t.getFullYear()}-${p(t.getMonth() + 1)}-${p(t.getDate())}`;
+  }
+  const fmtDate = iso => (iso ? iso.split('-').reverse().join('/') : '');
+  // Résumé affiché quand le bloc « Client et devis » est fermé
+  function updateClientSummary() {
+    const n = $('devisName').value.trim();
+    const c = $('clientName').value.trim();
+    $('clientSummaryText').textContent = n || c ? [n, c].filter(Boolean).join(' — ') : 'Détails du devis : intitulé, client, dates, notes';
+  }
+  $('devisName').addEventListener('input', updateClientSummary);
+  $('clientName').addEventListener('input', updateClientSummary);
+  $('devisDate').value = todayISO();
+  updateClientSummary();
+  $('btnNewDevis').addEventListener('click', async () => {
+    if (!(await customConfirm('Repartir d\'un formulaire vierge ? Les modifications non enregistrées seront perdues.'))) return;
+    blankForm();
+    showDevisStatus('Formulaire réinitialisé.');
+  });
+
+  // ---- Écran de départ : nouveau devis ou ancien devis ----
+  function showApp() { $('startScreen').hidden = true; $('appMain').hidden = false; window.scrollTo(0, 0); }
+  function showStart() { $('appMain').hidden = true; $('oldPanel').hidden = true; $('startRow').hidden = false; $('startScreen').hidden = false; window.scrollTo(0, 0); }
+  $('btnStartNew').addEventListener('click', () => { blankForm(); showApp(); });
+  $('btnStartOld').addEventListener('click', () => { $('startRow').hidden = true; $('oldPanel').hidden = false; });
+  $('btnClosePanel').addEventListener('click', () => { $('oldPanel').hidden = true; $('startRow').hidden = false; });
+  $('btnBackStart').addEventListener('click', async () => {
+    if (!(await customConfirm('Revenir au choix du devis ? Les modifications non enregistrées seront perdues.'))) return;
+    showStart();
+  });
+
+  $('btnPdfDevis').addEventListener('click', async () => {
+    try {
+      calc();
+      const c = window.lastCalc;
+      const name = $('devisName').value.trim() || 'Devis Le Checkpoint';
+      if (c.blockers.length) {
+        await customConfirm(
+          '<strong style="color:var(--danger);">Génération bloquée.</strong><br>Ce devis contient des erreurs qui doivent être corrigées avant d\'envoyer un PDF au client :<ul style="margin:8px 0 0 18px; padding:0;">'
+          + c.blockers.map(b => `<li>${esc(b)}</li>`).join('')
+          + '</ul>',
+          { singleButton: 'Fermer' }
+        );
+        return;
+      }
+      if (!window.jspdf) { showDevisStatus('Génération PDF indisponible (bibliothèque non chargée).', true); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      let y = 20;
+      const pageBottom = 275;
+      const ensureSpace = (height = 8) => { if (y + height > pageBottom) { doc.addPage(); y = 20; } };
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+      doc.text('Le Checkpoint — Proposition de devis', 15, y); y += 10;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text(pdfSafe(name), 15, y); y += 6;
+      const refTxt = $('devisRef').value.trim();
+      const dDate = fmtDate($('devisDate').value) || new Date().toLocaleDateString('fr-BE');
+      doc.text(pdfSafe(`Date du devis : ${dDate}${refTxt ? ' — Réf. ' + refTxt : ''}`), 15, y); y += 6;
+      const evDate = fmtDate($('eventDate').value);
+      doc.text(pdfSafe(`${evDate ? 'Événement le ' + evDate + ' — ' : ''}${c.heures} h — ${c.personnes} invités — ${c.creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'}`), 15, y); y += 6;
+      const clientLines = [$('clientName').value.trim(), ...$('clientAddress').value.split('\n').map(s => s.trim()), $('clientEmail').value.trim()].filter(Boolean);
+      if (clientLines.length) {
+        y += 4;
+        doc.setFont('helvetica', 'bold'); doc.text('Client', 15, y); y += 5;
+        doc.setFont('helvetica', 'normal');
+        clientLines.forEach(l => { ensureSpace(5); doc.text(pdfSafe(l), 15, y); y += 5; });
+      }
+      y += 8;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.text('Prestations prévues', 15, y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100);
+      doc.text('HTVA', 160, y, { align: 'right' });
+      doc.text('TVA', 180, y, { align: 'right' });
+      doc.text('TVAC', 195, y, { align: 'right' });
+      doc.setTextColor(0); y += 8;
+
+      const groupsOrder = ['Service Bar','Service Animation','Service Traiteur','Service Matériel','Service Entretien'];
+      const byGroup = {};
+      c.clientBreakdown.forEach(it => { (byGroup[it.group] = byGroup[it.group] || []).push(it); });
+      groupsOrder.filter(g => byGroup[g] && byGroup[g].length).forEach(g => {
+        ensureSpace(10);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(47, 82, 51);
+        doc.text(pdfSafe(g.toUpperCase()), 15, y);
+        doc.setDrawColor(200); doc.line(15, y + 1.2, 195, y + 1.2);
+        doc.setTextColor(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+        y += 5;
+        const lines = byGroup[g];
+        let subHTVA = 0, subTVAC = 0;
+        lines.forEach(it => {
+          const labelLines = doc.splitTextToSize(pdfSafe(it.label), 95);
+          ensureSpace(labelLines.length * 5 + (it.sub ? 4 : 0) + 2);
+          doc.text(labelLines, 15, y);
+          doc.setFontSize(9);
+          doc.text(fmtPdf(it.htva), 160, y, { align: 'right' });
+          doc.text(pdfSafe(it.tva + '%'), 180, y, { align: 'right' });
+          doc.text(fmtPdf(it.tvac), 195, y, { align: 'right' });
+          doc.setFontSize(10);
+          y += labelLines.length * 5;
+          if (it.sub) {
+            doc.setFontSize(8); doc.setTextColor(100);
+            const subLines = doc.splitTextToSize(pdfSafe(it.sub), 95);
+            doc.text(subLines, 15, y); y += subLines.length * 4;
+            doc.setTextColor(0); doc.setFontSize(10);
+          }
+          subHTVA += it.htva; subTVAC += it.tvac;
+          y += 2;
+        });
+        // Sous-total par service
+        ensureSpace(6);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(90);
+        doc.text(pdfSafe('Sous-total ' + g), 15, y);
+        doc.text(fmtPdf(subHTVA), 160, y, { align: 'right' });
+        doc.text(fmtPdf(subTVAC), 195, y, { align: 'right' });
+        doc.setTextColor(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+        y += 6;
+      });
+      ensureSpace(28);
+      y += 2; doc.setDrawColor(150); doc.line(15, y, 195, y); y += 7;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+      doc.text('Total HTVA', 15, y);
+      doc.text(fmtPdf(c.totalHTVA), 195, y, { align: 'right' }); y += 6;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(100);
+      Object.entries(c.tvaSummary).sort().forEach(([rate, amt]) => {
+        ensureSpace(5);
+        doc.text(pdfSafe(`dont TVA ${rate}%`), 15, y);
+        doc.text(fmtPdf(amt), 195, y, { align: 'right' }); y += 5;
+      });
+      doc.setTextColor(0); y += 2;
+      doc.setDrawColor(80); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 8;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
+      doc.text('Total TVAC', 15, y);
+      doc.text(fmtPdf(c.totalTVAC), 195, y, { align: 'right' }); y += 12;
+      const userNotes = $('devisNotes').value.trim();
+      if (userNotes) {
+        ensureSpace(14);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0);
+        doc.text('Notes et conditions', 15, y); y += 6;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        doc.splitTextToSize(pdfSafe(userNotes), 180).forEach(line => { ensureSpace(5); doc.text(line, 15, y); y += 4.5; });
+        y += 6;
+      }
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90);
+      const note = 'Les consommations éventuelles sont à régler sur place, sauf accord contraire précisé au devis. Toute prestation non reprise ci-dessus fera l’objet d’une confirmation préalable.';
+      const noteLines = doc.splitTextToSize(note, 180);
+      ensureSpace(noteLines.length * 4 + 5);
+      doc.text(noteLines, 15, y);
+      const blob = doc.output('blob');
+      const filename = `devis-${slugify(name)}.pdf`;
+
+      // 1. Page publiée sur claude.ai : le cadre bloque les liens de téléchargement, on passe par la capacité « downloads »
+      const downloads = await safeUse('downloads');
+      if (downloads) {
+        try {
+          await downloads.save({ filename, data: blob });
+          showDevisStatus('PDF téléchargé.');
+        } catch (e) {
+          if (e && e.code === 'declined') showDevisStatus('Téléchargement annulé.');
+          else showDevisStatus('Échec du téléchargement PDF : ' + (e && e.code || 'erreur inconnue'), true);
+        }
+        return;
+      }
+
+      // 2. Fichier ouvert hors de claude.ai : téléchargement navigateur standard
+      if (browserDownloadBlob(blob, filename)) showDevisStatus('PDF téléchargé.');
+      else showDevisStatus('Téléchargement PDF impossible dans cette vue.', true);
+    } catch (err) {
+      showDevisStatus('Erreur lors de la génération du PDF : ' + (err && err.message || err), true);
+    }
+  });
+
+  // ---- Aperçu devis client (modal) ----
+  $('btnApercuClient').addEventListener('click', () => {
+    calc();
+    const c = window.lastCalc;
+    const name = $('devisName').value.trim() || 'Devis Le Checkpoint';
+    const refTxt = $('devisRef').value.trim();
+    const dDate = fmtDate($('devisDate').value) || new Date().toLocaleDateString('fr-BE');
+    const evDate = fmtDate($('eventDate').value);
+    const clientLines = [$('clientName').value.trim(), ...$('clientAddress').value.split('\n').map(s => s.trim()), $('clientEmail').value.trim()].filter(Boolean);
+    const userNotes = $('devisNotes').value.trim();
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; display:flex; align-items:center; justify-content:center; padding:20px; overflow:auto;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff; color:#1f2a3c; max-width:700px; width:100%; max-height:90vh; overflow:auto; padding:32px; border-radius:10px; font-family:Inter,sans-serif; box-shadow:0 20px 60px rgba(0,0,0,.4);';
+    box.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div style="font-family:'Fraunces',serif; font-weight:600; font-size:11px; color:#2f5233; text-transform:uppercase; letter-spacing:.05em;">Aperçu — ce que verra le client</div>
+        <button type="button" data-close style="border:none; background:transparent; font-size:22px; cursor:pointer; color:#5b6472;">×</button>
+      </div>
+      <h2 style="font-family:'Fraunces',serif; font-weight:600; font-size:22px; margin:0 0 4px;">Le Checkpoint — Proposition de devis</h2>
+      <div style="font-size:14px; color:#1f2a3c; margin-bottom:4px;">${esc(name)}</div>
+      <div style="font-size:12.5px; color:#5b6472;">Date du devis : ${esc(dDate)}${refTxt ? ' — Réf. ' + esc(refTxt) : ''}</div>
+      <div style="font-size:12.5px; color:#5b6472; margin-bottom:16px;">${evDate ? 'Événement le ' + esc(evDate) + ' — ' : ''}${c.heures} h — ${c.personnes} invités — ${c.creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'}</div>
+      ${clientLines.length ? `<div style="margin-bottom:16px;"><div style="font-weight:600; font-size:12px; margin-bottom:4px;">Client</div>${clientLines.map(l => `<div style="font-size:13px;">${esc(l)}</div>`).join('')}</div>` : ''}
+      <div style="font-weight:600; font-size:14px; margin:18px 0 8px; padding-bottom:4px; border-bottom:1px solid #c9c0ac; display:flex; justify-content:space-between;"><span>Prestations prévues</span><span style="font-size:11px; color:#5b6472; font-weight:400;">HTVA · TVA · TVAC</span></div>
+      ${(() => {
+        const groupsOrder = ['Service Bar','Service Animation','Service Traiteur','Service Matériel','Service Entretien'];
+        const byGroup = {};
+        c.clientBreakdown.forEach(it => { (byGroup[it.group] = byGroup[it.group] || []).push(it); });
+        return groupsOrder.filter(g => byGroup[g] && byGroup[g].length).map(g => {
+          const lines = byGroup[g];
+          const subHTVA = lines.reduce((s, x) => s + x.htva, 0);
+          const subTVAC = lines.reduce((s, x) => s + x.tvac, 0);
+          return `<div style="margin-top:10px;">
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:#2f5233; padding:4px 0; border-bottom:1px solid #ddd6c5;">${esc(g)}</div>
+            ${lines.map(it => `<div style="padding:5px 0; font-size:13px; border-bottom:1px dashed #ddd6c5;"><div style="display:flex; justify-content:space-between; gap:10px;"><span>${esc(it.label)}${it.sub ? `<div style="font-size:11px; color:#5b6472;">${esc(it.sub)}</div>` : ''}</span><span style="font-weight:600; white-space:nowrap; text-align:right;">${esc(fmt(it.htva))}<div style="font-size:10.5px; color:#5b6472; font-weight:400;">TVA ${it.tva}% · ${esc(fmt(it.tvac))} TVAC</div></span></div></div>`).join('')}
+            <div style="display:flex; justify-content:space-between; padding:5px 0; font-size:12.5px; color:#5b6472;"><span>Sous-total ${esc(g)}</span><span style="font-weight:600; color:#1f2a3c;">${esc(fmt(subHTVA))} HTVA · ${esc(fmt(subTVAC))} TVAC</span></div>
+          </div>`;
+        }).join('');
+      })()}
+      <div style="display:flex; justify-content:space-between; margin-top:14px; padding-top:10px; border-top:1px solid #c9c0ac; font-size:13px;">
+        <span>Total HTVA</span>
+        <span style="font-weight:600;">${esc(fmt(c.totalHTVA))}</span>
+      </div>
+      ${Object.entries(c.tvaSummary).sort().map(([rate, amt]) => `<div style="display:flex; justify-content:space-between; font-size:12.5px; color:#5b6472; padding-top:4px;"><span>dont TVA ${rate}%</span><span>${esc(fmt(amt))}</span></div>`).join('')}
+      <div style="display:flex; justify-content:space-between; margin-top:10px; padding-top:10px; border-top:2px solid #2f5233; font-family:'Fraunces',serif; font-weight:600; font-size:17px;">
+        <span>Total TVAC</span>
+        <span>${esc(fmt(c.totalTVAC))}</span>
+      </div>
+      ${userNotes ? `<div style="margin-top:16px; font-size:12.5px; color:#1f2a3c;"><strong>Notes et conditions</strong><div style="white-space:pre-wrap; margin-top:4px;">${esc(userNotes)}</div></div>` : ''}
+      <div style="margin-top:14px; font-size:11px; color:#5b6472; font-style:italic;">Les consommations éventuelles sont à régler sur place, sauf accord contraire précisé au devis.</div>
+      <div style="margin-top:20px; text-align:right;">
+        <button type="button" data-close style="padding:8px 16px; border:1px solid #c9c0ac; background:#efeae0; border-radius:6px; cursor:pointer; font-family:Inter,sans-serif; font-size:13px;">Fermer</button>
+      </div>
+    `;
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+    const close = () => document.body.removeChild(overlay);
+    box.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', close));
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+  });
+
+  // ---- PDF interne : prix facturé + recettes + coûts réels + marge nette ----
+  $('btnPdfInterne').addEventListener('click', async () => {
+    try {
+      calc();
+      const c = window.lastCalc;
+      const name = $('devisName').value.trim() || 'Devis Le Checkpoint';
+      if (!window.jspdf) { showDevisStatus('Génération PDF indisponible (bibliothèque non chargée).', true); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      let y = 20;
+      const pageBottom = 275;
+      const ensureSpace = (height = 8) => { if (y + height > pageBottom) { doc.addPage(); y = 20; } };
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+      doc.text('Le Checkpoint — Fiche interne', 15, y); y += 8;
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(150, 70, 30);
+      doc.text('DOCUMENT INTERNE — NE PAS COMMUNIQUER AU CLIENT', 15, y); y += 8;
+      doc.setTextColor(0); doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text(pdfSafe(name), 15, y); y += 6;
+      doc.text(pdfSafe(new Date().toLocaleDateString('fr-BE')), 15, y); y += 6;
+      doc.text(pdfSafe(`${c.heures} h — ${c.personnes} invités — ${c.creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'}`), 15, y); y += 10;
+
+      const block = (title, lines, totalLabel, totalVal) => {
+        ensureSpace(14);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+        doc.text(pdfSafe(title), 15, y); y += 7;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+        lines.forEach(it => {
+          const labelLines = doc.splitTextToSize(pdfSafe(it.label), 135);
+          ensureSpace(labelLines.length * 4.5 + (it.sub ? 4 : 0) + 2);
+          doc.text(labelLines, 15, y);
+          doc.text(fmtPdf(it.val), 195, y, { align: 'right' });
+          y += labelLines.length * 4.5;
+          if (it.sub) {
+            doc.setFontSize(8); doc.setTextColor(120);
+            const subLines = doc.splitTextToSize(pdfSafe(it.sub), 135);
+            doc.text(subLines, 15, y); y += subLines.length * 3.5;
+            doc.setTextColor(0); doc.setFontSize(9);
+          }
+          y += 1;
+        });
+        y += 2; ensureSpace(10);
+        doc.setDrawColor(180); doc.line(15, y, 195, y); y += 6;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+        doc.text(pdfSafe(totalLabel), 15, y);
+        doc.text(fmtPdf(totalVal), 195, y, { align: 'right' }); y += 10;
+      };
+
+      block('1. Prix du devis (facturé au client)', c.items, 'Total facturé', c.total);
+      block('2. Recettes complémentaires (non facturées)', c.recettesLines.filter(l => l.val > 0), 'Total recettes', c.recettesComplementaires);
+      block('3. Coûts réels du Checkpoint', c.coutsLines, 'Total coûts réels', c.seuilTotal);
+
+      ensureSpace(18);
+      doc.setDrawColor(80); doc.setLineWidth(0.6); doc.line(15, y, 195, y); y += 9;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+      if (c.beneficeNet < 0) doc.setTextColor(168, 69, 47);
+      else doc.setTextColor(34, 61, 39);
+      doc.text('4. Marge / bénéfice net', 15, y);
+      doc.text(fmtPdf(c.beneficeNet), 195, y, { align: 'right' });
+      doc.setTextColor(0); y += 8;
+      doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(120);
+      doc.text('= Prix du devis + Recettes complémentaires − Coûts réels', 15, y);
+
+      const blob = doc.output('blob');
+      const filename = `interne-${slugify(name)}.pdf`;
+      const downloads = await safeUse('downloads');
+      if (downloads) {
+        try { await downloads.save({ filename, data: blob }); showDevisStatus('PDF interne téléchargé.'); }
+        catch (e) {
+          if (e && e.code === 'declined') showDevisStatus('Téléchargement annulé.');
+          else showDevisStatus('Échec du téléchargement PDF interne : ' + (e && e.code || 'erreur inconnue'), true);
+        }
+        return;
+      }
+      if (browserDownloadBlob(blob, filename)) showDevisStatus('PDF interne téléchargé.');
+      else showDevisStatus('Téléchargement PDF impossible dans cette vue.', true);
+    } catch (err) {
+      showDevisStatus('Erreur lors de la génération du PDF interne : ' + (err && err.message || err), true);
+    }
+  });
+</script>
+
+</body></html>

@@ -1532,7 +1532,7 @@
     const prixDevis = base + garantieConsoFee + equipe + locationSalle + animSimple + animSurMesureFacture + traiteur + traiteurReventeTotal + nettoyage + materiel;
 
     const items = [
-      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, warn: tarifNonDefini ? '⚠ tarif à 0 €/h : à renseigner dans « Créneau »' : null, val: base, on: true },
+      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, warn: tarifNonDefini ? '⚠ tarif à 0 €/h : à renseigner dans « Créneau »' : null, val: base, on: base > 0 },
       { label: `Garantie de consommation`, val: garantieConsoFee, on: garantieConsoOn },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn },
@@ -1547,7 +1547,7 @@
     // Détail pour le devis client — items avec TVA par poste (Matériel scindé)
     const tvaRate = id => parseFloat($(id).value) || 0;
     const clientItems = [
-      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, val: base, on: true, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
+      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, val: base, on: base > 0, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
       { label: `Garantie de consommation`, val: garantieConsoFee, on: garantieConsoOn, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked, tva: tvaRate('tvaEquipe'), group: 'Service Bar' },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn, tva: tvaRate('tvaLocationSalle'), group: 'Service Bar' },
@@ -1692,7 +1692,8 @@
     // ---------- 5. POINTS À VÉRIFIER AVANT ENVOI ----------
     const equipeOn = $('equipe').checked;
     const alerts = [];
-    if (tarifNonDefini) alerts.push({ level: 'error', text: `Le tarif horaire « ${creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'} » est à 0 €/h : le renseigner dans « Créneau ».` });
+    const serviceBarAutreCoche = equipeOn || locationSalleOn || garantieConsoOn;
+    if (tarifNonDefini && serviceBarAutreCoche) alerts.push({ level: 'error', text: `Le tarif horaire « ${creneauChoix === 'ferme' ? 'hors ouverture' : 'pendant ouverture'} » est à 0 €/h alors qu'une prestation Service Bar est cochée : le renseigner dans « Paramètres > Service Bar ».` });
     if (heures === 0) alerts.push({ level: 'error', text: `Le nombre d'heures est à 0.` });
     if (creneauChoix === 'ferme' && !nettoyageOn) alerts.push({ level: 'warn', text: `Hors ouverture, le nettoyage n'est pas coché : personne d'autre ne passe derrière.` });
     if (creneauChoix === 'ouvert' && (equipeOn || nettoyageOn) && !(window.activePreset === 'teambuilding' && !window.presetDirty)) alerts.push({ level: 'warn', text: `Pendant l'ouverture, l'équipe et le nettoyage sont normalement décochés : confirmer qu'ils sont voulus.` });

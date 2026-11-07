@@ -888,7 +888,7 @@
           <div id="coutTraiteurInfo" style="margin-top:8px; font-size:12.5px; color:var(--ink); background:color-mix(in srgb, var(--felt) 6%, var(--paper-2)); border-left:3px solid var(--felt); padding:10px 12px; border-radius:4px; display:none;">
             <div style="display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-variant-numeric:tabular-nums;">
               <div>Prix d'achat (HTVA, /pers.)</div><div><strong id="coutTraiteurBase">—</strong></div>
-              <div>Prix de revente (HTVA, /pers.)</div><div><strong id="coutTraiteurVal">—</strong> <span style="color:var(--ink-soft); font-size:11px;">= achat × 1,15</span></div>
+              <div>Prix de revente (HTVA, /pers.)</div><div><strong id="coutTraiteurVal">—</strong> <span style="color:var(--ink-soft); font-size:11px;">= achat × 1,33</span></div>
               <div>Marge réelle (/pers.)</div><div><strong id="coutTraiteurMarge" style="color:var(--felt-dark);">—</strong></div>
             </div>
             <div style="color:var(--ink-soft); font-size:11px; margin-top:6px; font-style:italic;">TVA 6 % traiteur récupérable (hors coût). TVA 12 % nourriture appliquée au client via le taux « Nourriture revendue ».</div>
@@ -1014,7 +1014,7 @@
           </div>
         </div>
         <div class="field">
-          <label>Prix du traiteur par personne (HTVA)<span class="hint"> — base du calcul « +6 % TVA +15 % marge »</span></label>
+          <label>Prix du traiteur par personne (HTVA)<span class="hint"> — base du calcul « +33 % marge sur HTVA »</span></label>
           <div class="rate-input">
             <input type="number" id="traiteurPrixHTVA" min="0" step="0.5" value="0">
             <span>€/invité HTVA</span>
@@ -1476,10 +1476,10 @@
     const traiteurNourritureOn = $('traiteurNourriture').checked;
     const traiteurPrixHTVA = parseFloat($('traiteurPrixHTVA').value) || 0;
     const traiteurReventePersManuel = parseFloat($('traiteurReventePers').value) || 0;
-    // Prix de revente auto = prix HTVA × 1.15 (marge 15 % sur HTVA).
+    // Prix de revente auto = prix HTVA × 1.33 (marge 33 % sur HTVA).
     // La TVA 6 % payée au traiteur est récupérable, elle n'est pas un coût pour le Checkpoint.
     // La TVA 12 % « nourriture revendue » est appliquée ensuite au devis client via tvaNourriture.
-    const traiteurReventeAuto = traiteurPrixHTVA > 0 ? traiteurPrixHTVA * 1.15 : 0;
+    const traiteurReventeAuto = traiteurPrixHTVA > 0 ? traiteurPrixHTVA * 1.33 : 0;
     const traiteurReventePers = traiteurReventePersManuel > 0 ? traiteurReventePersManuel : traiteurReventeAuto;
     const traiteurReventeTotal = traiteurNourritureOn ? personnes * traiteurReventePers : 0;
     // Affichage du coût calculé dans Prestations
@@ -1720,7 +1720,7 @@
     if (animSimpleOn && animSimpleRate === 0) alerts.push({ level: 'warn', text: `Animation simple cochée mais tarif horaire à 0 €/h (Paramètres > Service Animation).` });
     if (traiteurOn && (parseFloat($('traiteurFee').value) || 0) === 0) alerts.push({ level: 'warn', text: `Gestion traiteur cochée mais forfait à 0 €.` });
     if (traiteurNourritureOn && traiteurReventePers === 0) alerts.push({ level: 'error', text: `Traiteur coché mais aucun prix de revente ni prix d'achat traiteur n'est encodé.` });
-    if (traiteurReventePersManuel > 0 && traiteurPrixHTVA > 0 && Math.abs(traiteurReventePersManuel - traiteurReventeAuto) > 0.5) alerts.push({ level: 'info', text: `Traiteur : la revente manuelle (${fmt(traiteurReventePersManuel)}) remplace le calcul automatique (${fmt(traiteurReventeAuto)}) basé sur +15 % du prix HTVA. Vérifier que c'est voulu.` });
+    if (traiteurReventePersManuel > 0 && traiteurPrixHTVA > 0 && Math.abs(traiteurReventePersManuel - traiteurReventeAuto) > 0.5) alerts.push({ level: 'info', text: `Traiteur : la revente manuelle (${fmt(traiteurReventePersManuel)}) remplace le calcul automatique (${fmt(traiteurReventeAuto)}) basé sur +33 % du prix HTVA. Vérifier que c'est voulu.` });
 
     // Contrôles de dates et de saisie
     const devisDateVal = $('devisDate').value;

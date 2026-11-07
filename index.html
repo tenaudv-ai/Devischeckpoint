@@ -1320,12 +1320,70 @@
   const fmtPdf = n => pdfSafe(fmt(n));
   const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+  // ===== Sauvegarde Google Drive (via Apps Script) =====
+  // Colle ici l'URL du déploiement Apps Script (se termine par /exec)
+  const DRIVE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRxGoVCx-KXD57JOdKSn9goBoZRy8ERryNV2X-swruSDIPXPWWBXPX5gjduEU_PQEf1Q/exec';
+  const DRIVE_KEY_STORAGE = 'checkpoint-devis-cle';
+
+  function driveKey(forceAsk) {
+    let k = null;
+    try { k = localStorage.getItem(DRIVE_KEY_STORAGE); } catch (e) {}
+    if (!k || forceAsk) {
+      k = window.prompt(forceAsk ? 'Clé d\'accès incorrecte. Entre la clé d\'accès aux devis :' : 'Clé d\'accès aux devis (demandée une seule fois sur cet appareil) :');
+      if (!k) return null;
+      try { localStorage.setItem(DRIVE_KEY_STORAGE, k); } catch (e) {}
+    }
+    return k;
+  }
+
+  async function driveCall(payload, retried) {
+    const key = driveKey(retried);
+    if (!key) throw new Error('no_key');
+    const res = await fetch(DRIVE_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // évite la requête CORS préalable
+      body: JSON.stringify(Object.assign({ key }, payload)),
+    });
+    const out = await res.json();
+    if (!out.ok && out.error === 'bad_key' && !retried) return driveCall(payload, true);
+    if (!out.ok) throw new Error(out.error || 'erreur');
+    return out;
+  }
+
+  function makeDriveDb() {
+    const listeners = [];
+    const wrap = (id, data) => ({ id, exists: !!data, data: () => data });
+    async function refresh() {
+      try {
+        const out = await driveCall({ action: 'list' });
+        const docs = (out.docs || []).map(d => wrap(d.id, d.data));
+        listeners.forEach(l => l.ok(docs));
+      } catch (e) { listeners.forEach(l => l.err && l.err(e)); }
+    }
+    const query = { orderBy() { return query; }, limit() { return query; },
+      onSnapshot(ok, err) { listeners.push({ ok, err }); refresh(); return () => {}; } };
+    return {
+      collection() { return query; },
+      doc(path) {
+        const id = path.split('/').pop();
+        return {
+          async get() { const out = await driveCall({ action: 'get', id }); return wrap(id, out.data); },
+          async set(data) { await driveCall({ action: 'set', id, data }); refresh(); },
+          async delete() { await driveCall({ action: 'delete', id }); refresh(); },
+        };
+      },
+    };
+  }
+  const driveDb = /^https:\/\/script\.google\.com\//.test(DRIVE_SCRIPT_URL) ? makeDriveDb() : null;
+
   async function safeUse(name) {
     try {
-      if (typeof window.claude === 'undefined' || !window.claude || typeof window.claude.use !== 'function') return null;
+      if (typeof window.claude === 'undefined' || !window.claude || typeof window.claude.use !== 'function') {
+        return name === 'db' ? driveDb : null;
+      }
       return await window.claude.use(name);
     } catch (e) {
-      return null;
+      return name === 'db' ? driveDb : null;
     }
   }
 
@@ -2026,20 +2084,17 @@
     });
   }
 
-  if (typeof window.claude === 'undefined') {
-    $('devisList').innerHTML = `<div style="font-size:12px; color:var(--danger);">Fichier ouvert hors de claude.ai : l'enregistrement des devis ne fonctionne que sur la page publiée (lien de l'artefact). Le téléchargement PDF, lui, fonctionne partout.</div>`;
-  }
 
   let devisDb = null;
   (async () => {
     devisDb = await safeUse('db');
     if (!devisDb) {
-      $('devisList').innerHTML = `<div style="font-size:12px; color:var(--ink-soft);">Enregistrement des devis indisponible dans cette vue.</div>`;
+      $('devisList').innerHTML = `<div style="font-size:12px; color:var(--ink-soft);">Enregistrement des devis non configuré (URL du script Google manquante dans index.html).</div>`;
       return;
     }
     devisDb.collection('devis').orderBy('savedAt', 'desc').limit(30).onSnapshot(
       snap => renderDevisList(snap.docs),
-      () => showDevisStatus('Impossible de charger les devis.', true)
+      (e) => { const m = e && e.message === 'no_key' ? 'Clé d\'accès requise pour voir les devis.' : 'Impossible de charger les devis depuis Google Drive.'; $('devisList').innerHTML = `<div style="font-size:12px; color:var(--danger);">${m}</div>`; }
     );
   })();
 

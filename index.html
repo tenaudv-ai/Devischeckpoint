@@ -806,6 +806,10 @@
         <div class="txt">
           <strong>Animation simple</strong>
           <div class="hint">jeu déjà existant, pas de création</div>
+          <div class="rate-input" style="margin-top:4px;">
+            <input type="number" id="animSimpleH" min="0" step="0.5" value="0" style="width:80px;">
+            <span>h dédiées</span>
+          </div>
         </div>
       </div>
 
@@ -821,6 +825,10 @@
         <input type="checkbox" id="animTypeBingo">
         <div class="txt">
           <strong>Bingo Checkpoint</strong>
+          <div class="rate-input" style="margin-top:4px;">
+            <input type="number" id="animTypeBingoH" min="0" step="0.5" value="0" style="width:80px;">
+            <span>h dédiées</span>
+          </div>
         </div>
       </div>
 
@@ -828,6 +836,10 @@
         <input type="checkbox" id="animTypeBlindtest">
         <div class="txt">
           <strong>Blind Test</strong>
+          <div class="rate-input" style="margin-top:4px;">
+            <input type="number" id="animTypeBlindtestH" min="0" step="0.5" value="0" style="width:80px;">
+            <span>h dédiées</span>
+          </div>
         </div>
       </div>
 
@@ -835,6 +847,10 @@
         <input type="checkbox" id="animTypeKaraoke">
         <div class="txt">
           <strong>Karaoké</strong>
+          <div class="rate-input" style="margin-top:4px;">
+            <input type="number" id="animTypeKaraokeH" min="0" step="0.5" value="0" style="width:80px;">
+            <span>h dédiées</span>
+          </div>
         </div>
       </div>
 
@@ -842,6 +858,10 @@
         <input type="checkbox" id="animTypeApero">
         <div class="txt">
           <strong>Apéro</strong>
+          <div class="rate-input" style="margin-top:4px;">
+            <input type="number" id="animTypeAperoH" min="0" step="0.5" value="0" style="width:80px;">
+            <span>h dédiées</span>
+          </div>
         </div>
       </div>
 
@@ -849,6 +869,10 @@
         <input type="checkbox" id="animTypeEscapebox">
         <div class="txt">
           <strong>Escape Box</strong>
+          <div class="rate-input" style="margin-top:4px;">
+            <input type="number" id="animTypeEscapeboxH" min="0" step="0.5" value="0" style="width:80px;">
+            <span>h dédiées</span>
+          </div>
         </div>
       </div>
 
@@ -1469,7 +1493,25 @@
     const isEscapeBox = animSimpleOn && $('animTypeEscapebox').checked;
     const animateurSuppOn = animSimpleOn && $('animateurSupplementaire').checked;
     const nbAnimateurs = 1 + (animateurSuppOn ? 1 : 0);
-    const animSimpleRaw = heures * animSimpleRate * nbAnimateurs;
+    // Heures dédiées par type d'animation coché. Si aucune n'est renseignée, on retombe
+    // sur la durée du créneau (heures) pour éviter de facturer 0 par erreur.
+    const hBingo = animTypeBingo ? (parseFloat($('animTypeBingoH').value) || 0) : 0;
+    const hBlindtest = animTypeBlindtest ? (parseFloat($('animTypeBlindtestH').value) || 0) : 0;
+    const hKaraoke = animTypeKaraoke ? (parseFloat($('animTypeKaraokeH').value) || 0) : 0;
+    const hApero = animTypeApero ? (parseFloat($('animTypeAperoH').value) || 0) : 0;
+    const hEscapebox = isEscapeBox ? (parseFloat($('animTypeEscapeboxH').value) || 0) : 0;
+    const hAnimSimple = animSimpleOn ? (parseFloat($('animSimpleH').value) || 0) : 0;
+    const animTypesHeuresBreakdown = [];
+    if (hAnimSimple > 0) animTypesHeuresBreakdown.push({ name: 'Animation', h: hAnimSimple });
+    if (animTypeBingo) animTypesHeuresBreakdown.push({ name: 'Bingo', h: hBingo });
+    if (animTypeBlindtest) animTypesHeuresBreakdown.push({ name: 'Blind Test', h: hBlindtest });
+    if (animTypeKaraoke) animTypesHeuresBreakdown.push({ name: 'Karaoké', h: hKaraoke });
+    if (animTypeApero) animTypesHeuresBreakdown.push({ name: 'Apéro', h: hApero });
+    if (isEscapeBox) animTypesHeuresBreakdown.push({ name: 'Escape Box', h: hEscapebox });
+    const animHeuresFromTypes = animTypesHeuresBreakdown.reduce((s, x) => s + x.h, 0);
+    // Repli : si aucun type n'a d'heure dédiée, on utilise la durée du créneau (évite une facturation nulle).
+    const animHeuresUtiles = animHeuresFromTypes > 0 ? animHeuresFromTypes : heures;
+    const animSimpleRaw = animHeuresUtiles * animSimpleRate * nbAnimateurs;
     const animSimpleBase = animSimpleRaw + (isEscapeBox ? 80 : 0);
     const animSimplePrep = animSimpleOn ? animSimplePrepVal : 0;
     const animSimple = animSimpleOn ? animSimpleBase + animSimplePrep : 0;
@@ -1557,7 +1599,11 @@
       { label: `Garantie de consommation (forfait)`, val: garantieConsoFee, on: garantieConsoOn && garantieConsoMode === 'forfait' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn },
-      { label: `Animation`, sub: `${heures}h × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${isEscapeBox ? ' + 80€ Escape Box' : ''} + ${animSimplePrepVal}€ préparation`, val: animSimple, on: animSimpleOn },
+      { label: `Animation`, sub: (() => {
+          const parts = animTypesHeuresBreakdown.map(t => `${t.name} ${t.h}h`);
+          const base = parts.length ? parts.join(' + ') : `${animHeuresUtiles}h`;
+          return `${base} × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${isEscapeBox ? ' + 80€ Escape Box' : ''} + ${animSimplePrepVal}€ préparation`;
+        })(), val: animSimple, on: animSimpleOn },
       { label: `Animation sur mesure (forfait)`, val: animSurMesureFacture, on: animSurMesureOn },
       { label: `Gestion traiteur (forfait)`, val: traiteur, on: traiteurOn },
       { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers}€`, val: traiteurReventeTotal, on: traiteurNourritureOn },
@@ -1581,7 +1627,7 @@
           if (isEscapeBox) types.push('Escape Box');
           return 'Animation' + (types.length ? ' (' + types.join(', ') + ')' : '');
         })(),
-        sub: `${heures}h × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${isEscapeBox ? ' + 80€ Escape Box' : ''}`, val: animSimple, on: animSimpleOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
+        val: animSimple, on: animSimpleOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
       { label: `Animation sur mesure`, val: animSurMesureFacture, on: animSurMesureOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
       { label: `Service traiteur`, val: traiteur, on: traiteurOn, tva: tvaRate('tvaTraiteur'), group: 'Service Traiteur' },
       { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers.toFixed(2)}€`, val: traiteurReventeTotal, on: traiteurNourritureOn, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' },
@@ -1667,8 +1713,11 @@
         animatorsInCost = nbAnimateurs; // 1 sans supp, 2 avec supp
       }
     }
+    // Équipe bar sur toute la durée du créneau ; animateurs sur la somme des heures dédiées à l'animation.
+    const coutEquipe = ($('equipe').checked ? equipeStaff : 0) * heures * coutPersonnelHeureVal;
+    const coutAnimateurs = animatorsInCost * animHeuresUtiles * coutPersonnelHeureVal;
     const coutPersonnelCount = ($('equipe').checked ? equipeStaff : 0) + animatorsInCost;
-    const coutPersonnel = coutPersonnelCount * heures * coutPersonnelHeureVal;
+    const coutPersonnel = coutEquipe + coutAnimateurs;
     const coutNettoyageVal = nettoyageOn ? (parseFloat($('coutNettoyageReel').value) || 0) : 0;
     const coutTraiteurAchatTotal = traiteurNourritureOn ? personnes * coutTraiteurAchatPers : 0;
     const coutMaterielAchatVal = materielAchatOn ? (parseFloat($('coutMaterielAchatReel').value) || 0) : 0;
@@ -1748,6 +1797,9 @@
     if (heures > 12) alerts.push({ level: 'info', text: `${heures} h : créneau inhabituel (> 12 h). Vérifier.` });
     if (equipeOn && equipeStaff === 0) alerts.push({ level: 'error', text: `Service Bar coché mais 0 personne d'équipe : incohérent.` });
     if (animSimpleOn && animSimpleRate === 0) alerts.push({ level: 'warn', text: `Animation simple cochée mais tarif horaire à 0 €/h (Paramètres > Service Animation).` });
+    const typesSansHeures = animTypesHeuresBreakdown.filter(t => t.h === 0).map(t => t.name);
+    if (animSimpleOn && typesSansHeures.length > 0 && animHeuresFromTypes > 0) alerts.push({ level: 'warn', text: `Types d'animation cochés sans heures dédiées : ${typesSansHeures.join(', ')}. Ils ne sont pas facturés.` });
+    if (animSimpleOn && animHeuresFromTypes === 0 && animTypesHeuresBreakdown.length > 0) alerts.push({ level: 'info', text: `Aucune heure dédiée aux types d'animation : le calcul utilise la durée du créneau (${heures}h) par défaut.` });
     if (traiteurOn && (parseFloat($('traiteurFee').value) || 0) === 0) alerts.push({ level: 'warn', text: `Gestion traiteur cochée mais forfait à 0 €.` });
     if (traiteurNourritureOn && traiteurReventePers === 0) alerts.push({ level: 'error', text: `Traiteur coché mais aucun prix de revente ni prix d'achat traiteur n'est encodé.` });
     if (traiteurReventePersManuel > 0 && traiteurPrixHTVA > 0 && Math.abs(traiteurReventePersManuel - traiteurReventeAuto) > 0.5) alerts.push({ level: 'info', text: `Traiteur : la revente manuelle (${fmt(traiteurReventePersManuel)}) remplace le calcul automatique (${fmt(traiteurReventeAuto)}) basé sur +33 % de majoration sur le prix d'achat HTVA. Vérifier que c'est voulu.` });
@@ -2031,7 +2083,13 @@
     ['heures','number'], ['personnes','number'], ['rateFerme','number'], ['rateOuvert','number'],
     ['equipe','checkbox'], ['equipeRate','number'], ['equipeStaff','number'],
     ['locationSalle','checkbox'], ['locationSalleFee','number'], ['locationSalleMode','select'],
-    ['animSimple','checkbox'], ['animTypeBingo','checkbox'], ['animTypeBlindtest','checkbox'], ['animTypeKaraoke','checkbox'], ['animTypeApero','checkbox'], ['animTypeEscapebox','checkbox'], ['animSimpleRate','number'], ['animSimplePrep','number'],
+    ['animSimple','checkbox'], ['animSimpleH','number'],
+    ['animTypeBingo','checkbox'], ['animTypeBingoH','number'],
+    ['animTypeBlindtest','checkbox'], ['animTypeBlindtestH','number'],
+    ['animTypeKaraoke','checkbox'], ['animTypeKaraokeH','number'],
+    ['animTypeApero','checkbox'], ['animTypeAperoH','number'],
+    ['animTypeEscapebox','checkbox'], ['animTypeEscapeboxH','number'],
+    ['animSimpleRate','number'], ['animSimplePrep','number'],
     ['animateurSupplementaire','checkbox'],
     ['animSurMesure','checkbox'], ['animSurMesureFacture','number'], ['coutAnimSurMesure','number'],
     ['garantieConso','checkbox'], ['garantieConsoFee','number'], ['garantieConsoMode','select'],
@@ -2239,7 +2297,13 @@
       heures: 0, personnes: 0, rateFerme: 0, rateOuvert: 0,
       equipe: false, equipeRate: 50, equipeStaff: 1,
       locationSalle: false, locationSalleFee: 0, locationSalleMode: 'forfait',
-      animSimple: false, animTypeBingo: false, animTypeBlindtest: false, animTypeKaraoke: false, animTypeApero: false, animTypeEscapebox: false, animSimpleRate: 50, animSimplePrep: 30,
+      animSimple: false, animSimpleH: 0,
+      animTypeBingo: false, animTypeBingoH: 0,
+      animTypeBlindtest: false, animTypeBlindtestH: 0,
+      animTypeKaraoke: false, animTypeKaraokeH: 0,
+      animTypeApero: false, animTypeAperoH: 0,
+      animTypeEscapebox: false, animTypeEscapeboxH: 0,
+      animSimpleRate: 50, animSimplePrep: 30,
       animSurMesure: false, animSurMesureFacture: 0, coutAnimSurMesure: 0, animateurSupplementaire: false,
       garantieConso: false, garantieConsoFee: 0,
       traiteur: false, traiteurFee: 60,

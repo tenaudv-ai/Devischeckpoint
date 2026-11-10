@@ -1536,6 +1536,18 @@
     const animSimplePrep = animSimpleOn ? animSimplePrepVal : 0;
     const animSimple = animSimpleOn ? animSimpleBase + animSimplePrep : 0;
 
+    // Une ligne par animation pour le devis client ; la préparation s'ajoute à la première animation.
+    const animLignes = (() => {
+      if (!animSimpleOn) return [];
+      const src = animHeuresFromTypes > 0 ? animTypesHeuresBreakdown.filter(t => t.h > 0) : [{ name: 'Animation', h: animHeuresUtiles }];
+      return src.map((t, i) => {
+        let val = t.h * animSimpleRate * nbAnimateurs;
+        if (t.name === 'Escape Box') val += 80;
+        if (i === 0) val += animSimplePrep;
+        const label = t.name === 'Animation' ? 'Animation' : 'Animation ' + t.name;
+        return { label, h: t.h, val };
+      });
+    })();
     const animSurMesureOn = $('animSurMesure').checked;
     const animSurMesureFacture = animSurMesureOn ? (parseFloat($('animSurMesureFacture').value) || 0) : 0;
 
@@ -1619,11 +1631,7 @@
       { label: `Garantie de consommation (forfait)`, val: garantieConsoFee, on: garantieConsoOn && garantieConsoMode === 'forfait' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn },
-      { label: `Animation`, sub: (() => {
-          const parts = animTypesHeuresBreakdown.map(t => `${t.name} ${t.h}h`);
-          const base = parts.length ? parts.join(' + ') : `${animHeuresUtiles}h`;
-          return `${base} × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${isEscapeBox ? ' + 80€ Escape Box' : ''} + ${animSimplePrepVal}€ préparation`;
-        })(), val: animSimple, on: animSimpleOn },
+      ...animLignes.map((a, i) => ({ label: a.label, sub: `${a.h}h × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${a.label === 'Animation Escape Box' ? ' + 80€ Escape Box' : ''}${i === 0 && animSimplePrep > 0 ? ' + ' + animSimplePrep + '€ préparation' : ''}`, val: a.val, on: true })),
       { label: `Animation sur mesure (forfait)`, val: animSurMesureFacture, on: animSurMesureOn },
       { label: `Gestion traiteur (forfait)`, val: traiteur, on: traiteurOn },
       { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers}€`, val: traiteurReventeTotal, on: traiteurNourritureOn },
@@ -1638,16 +1646,7 @@
       { label: `Garantie de consommation (forfait)`, val: garantieConsoFee, on: garantieConsoOn && garantieConsoMode === 'forfait', tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked, tva: tvaRate('tvaEquipe'), group: 'Service Bar' },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn, tva: tvaRate('tvaLocationSalle'), group: 'Service Bar' },
-      { label: (() => {
-          const types = [];
-          if (animTypeBingo) types.push('Bingo');
-          if (animTypeBlindtest) types.push('Blind Test');
-          if (animTypeKaraoke) types.push('Karaoké');
-          if (animTypeApero) types.push('Apéro');
-          if (isEscapeBox) types.push('Escape Box');
-          return 'Animation' + (types.length ? ' (' + types.join(', ') + ')' : '');
-        })(),
-        val: animSimple, on: animSimpleOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
+      ...animLignes.map(a => ({ label: a.label, val: a.val, on: true, tva: tvaRate('tvaAnimation'), group: 'Service Animation' })),
       { label: `Animation sur mesure`, val: animSurMesureFacture, on: animSurMesureOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
       { label: `Service traiteur`, val: traiteur, on: traiteurOn, tva: tvaRate('tvaTraiteur'), group: 'Service Traiteur' },
       { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers.toFixed(2)}€`, val: traiteurReventeTotal, on: traiteurNourritureOn, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' },

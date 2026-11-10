@@ -1329,7 +1329,6 @@
         <button type="button" id="btnPdfDevis" class="btn btn-primary">PDF client</button>
         <button type="button" id="btnPdfInterne" class="btn">PDF interne</button>
         <button type="button" id="btnSaveDevis" class="btn">Enregistrer une version</button>
-        <button type="button" id="btnOpenDrive" class="btn">📁 Dossier Drive</button>
         <button type="button" id="btnNewDevis" class="btn">Nouveau devis</button>
       </div>
       <div id="devisStatus" role="status" style="font-size:12px; color:var(--ink-soft); margin-top:8px; display:none;"></div>
@@ -1357,19 +1356,39 @@
   const DRIVE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxRxGoVCx-KXD57JOdKSn9goBoZRy8ERryNV2X-swruSDIPXPWWBXPX5gjduEU_PQEf1Q/exec';
   const DRIVE_KEY_STORAGE = 'checkpoint-devis-cle';
 
-  function driveKey(forceAsk) {
+  // Demande de clé dans la page (window.prompt est bloqué sur claude.ai)
+  function askKey(message) {
+    return new Promise(resolve => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;';
+      ov.innerHTML = '<form style="background:var(--paper-2,#fff);color:var(--ink,#000);border-radius:8px;padding:18px;max-width:340px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.3);font:14px Inter,sans-serif;">'
+        + '<div style="margin-bottom:10px;"></div>'
+        + '<input type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--line,#ccc);border-radius:4px;font:inherit;margin-bottom:12px;">'
+        + '<div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" data-c style="padding:6px 12px;">Annuler</button><button type="submit" style="padding:6px 12px;background:var(--felt,#2f5233);color:#fff;border:0;border-radius:4px;">Valider</button></div></form>';
+      ov.querySelector('div').textContent = message;
+      const form = ov.querySelector('form'), input = ov.querySelector('input');
+      const done = v => { ov.remove(); resolve(v); };
+      form.addEventListener('submit', e => { e.preventDefault(); done(input.value.trim() || null); });
+      ov.querySelector('[data-c]').addEventListener('click', () => done(null));
+      document.body.appendChild(ov);
+      setTimeout(() => input.focus(), 0);
+    });
+  }
+
+  let askingKey = null;
+  async function driveKey(forceAsk) {
     let k = null;
     try { k = localStorage.getItem(DRIVE_KEY_STORAGE); } catch (e) {}
-    if (!k || forceAsk) {
-      k = window.prompt(forceAsk ? 'Clé d\'accès incorrecte. Entre la clé d\'accès aux devis :' : 'Clé d\'accès aux devis (demandée une seule fois sur cet appareil) :');
-      if (!k) return null;
-      try { localStorage.setItem(DRIVE_KEY_STORAGE, k); } catch (e) {}
+    if (k && !forceAsk) return k;
+    if (!askingKey) {
+      askingKey = askKey(forceAsk ? 'Clé d\'accès incorrecte. Entre la clé d\'accès aux devis :' : 'Clé d\'accès aux devis (demandée une seule fois sur cet appareil) :')
+        .then(v => { askingKey = null; if (v) { try { localStorage.setItem(DRIVE_KEY_STORAGE, v); } catch (e) {} } return v; });
     }
-    return k;
+    return askingKey;
   }
 
   async function driveCall(payload, retried) {
-    const key = driveKey(retried);
+    const key = await driveKey(retried);
     if (!key) throw new Error('no_key');
     const res = await fetch(DRIVE_SCRIPT_URL, {
       method: 'POST',
@@ -1389,7 +1408,7 @@
       try {
         const out = await driveCall({ action: 'list' });
         const docs = (out.docs || []).map(d => wrap(d.id, d.data));
-        listeners.forEach(l => l.ok(docs));
+        listeners.forEach(l => l.ok({ docs }));
       } catch (e) { listeners.forEach(l => l.err && l.err(e)); }
     }
     const query = { orderBy() { return query; }, limit() { return query; },
@@ -2250,7 +2269,7 @@
     }
     devisDb.collection('devis').orderBy('savedAt', 'desc').limit(30).onSnapshot(
       snap => renderDevisList(snap.docs),
-      (e) => { const m = e && e.message === 'no_key' ? 'Clé d\'accès requise pour voir les devis.' : 'Impossible de charger les devis depuis Google Drive.'; $('devisList').innerHTML = `<div style="font-size:12px; color:var(--danger);">${m}</div>`; }
+      (e) => { const m = e && e.message === 'no_key' ? 'Clé d\'accès requise pour voir les devis. <a href="#" onclick="location.reload();return false;">Entrer la clé</a>' : 'Impossible de charger les devis depuis Google Drive.'; $('devisList').innerHTML = `<div style="font-size:12px; color:var(--danger);">${m}</div>`; }
     );
   })();
 
@@ -2343,14 +2362,6 @@
   $('clientName').addEventListener('input', updateClientSummary);
   $('devisDate').value = todayISO();
   updateClientSummary();
-  // URL du dossier Drive où sont archivés les devis exportés.
-  // Pour en changer : modifier cette constante uniquement.
-  const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1Tu3WkmnyTQgSZ7DrwlKwnfNPXwyQ-2DS?usp=drive_link';
-
-  $('btnOpenDrive').addEventListener('click', () => {
-    window.open(DRIVE_FOLDER_URL, '_blank', 'noopener');
-    showDevisStatus('Dossier Drive ouvert dans un nouvel onglet.');
-  });
 
   $('btnNewDevis').addEventListener('click', async () => {
     if (!(await customConfirm('Repartir d\'un formulaire vierge ? Les modifications non enregistrées seront perdues.'))) return;

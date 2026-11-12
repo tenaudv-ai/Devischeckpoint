@@ -914,7 +914,15 @@
         <input type="checkbox" id="traiteurNourriture">
         <div class="txt">
           <strong>Traiteur</strong>
-          <div class="hint">Le Checkpoint achète les plats au traiteur et les revend aux invités — montants dans Paramètres</div>
+          <div class="hint">Le Checkpoint achète les plats au traiteur et les revend aux invités (+33 %, arrondi au 0,50 € supérieur)</div>
+          <div style="display:grid; grid-template-columns:auto auto 1fr; gap:6px 8px; align-items:center; margin-top:6px; font-size:13px;">
+            <input type="checkbox" id="traiteurApero"><label for="traiteurApero">Apéritif</label>
+            <div class="rate-input"><input type="number" id="traiteurPrixApero" min="0" step="0.5" value="0" style="width:80px;"><span>€/pers. achat HTVA</span></div>
+            <input type="checkbox" id="traiteurPlat"><label for="traiteurPlat">Plat</label>
+            <div class="rate-input"><input type="number" id="traiteurPrixHTVA" min="0" step="0.5" value="0" style="width:80px;"><span>€/pers. achat HTVA</span></div>
+            <input type="checkbox" id="traiteurDessert"><label for="traiteurDessert">Dessert</label>
+            <div class="rate-input"><input type="number" id="traiteurPrixDessert" min="0" step="0.5" value="0" style="width:80px;"><span>€/pers. achat HTVA</span></div>
+          </div>
           <div id="coutTraiteurInfo" style="margin-top:8px; font-size:12.5px; color:var(--ink); background:color-mix(in srgb, var(--felt) 6%, var(--paper-2)); border-left:3px solid var(--felt); padding:10px 12px; border-radius:4px; display:none;">
             <div style="display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-variant-numeric:tabular-nums;">
               <div>Prix d'achat (HTVA, /pers.)</div><div><strong id="coutTraiteurBase">—</strong></div>
@@ -1049,12 +1057,6 @@
             <input type="number" id="traiteurFee" min="0" step="5" value="60">
             <span>€ forfait</span>
           </div>
-        </div>
-        <div class="field">
-          <label>Prix d'achat traiteur par personne (HTVA)<span class="hint"> — chaque partie est revendue +33 %, arrondie au 0,50 € supérieur</span></label>
-          <div class="rate-input"><input type="number" id="traiteurPrixApero" min="0" step="0.5" value="0"><span>€/invité — Apéritif</span></div>
-          <div class="rate-input" style="margin-top:4px;"><input type="number" id="traiteurPrixHTVA" min="0" step="0.5" value="0"><span>€/invité — Plat</span></div>
-          <div class="rate-input" style="margin-top:4px;"><input type="number" id="traiteurPrixDessert" min="0" step="0.5" value="0"><span>€/invité — Dessert</span></div>
         </div>
         <div class="field">
           <label>Nourriture — prix de revente au client<span class="hint"> (laissez à 0 pour utiliser le calcul automatique ci-dessus ; sinon, ce montant prend le dessus)</span></label>
@@ -1569,9 +1571,9 @@
     // Traiteur en 3 parties (le champ historique traiteurPrixHTVA = Plat)
     const round50 = x => x > 0 ? Math.ceil(Math.round(x * 1.33 * 100) / 50) / 2 : 0;
     const traiteurPartsAll = [
-      { name: 'Apéritif', achat: parseFloat($('traiteurPrixApero').value) || 0 },
-      { name: 'Plat', achat: parseFloat($('traiteurPrixHTVA').value) || 0 },
-      { name: 'Dessert', achat: parseFloat($('traiteurPrixDessert').value) || 0 },
+      { name: 'Apéritif', achat: $('traiteurApero').checked ? (parseFloat($('traiteurPrixApero').value) || 0) : 0 },
+      { name: 'Plat', achat: $('traiteurPlat').checked ? (parseFloat($('traiteurPrixHTVA').value) || 0) : 0 },
+      { name: 'Dessert', achat: $('traiteurDessert').checked ? (parseFloat($('traiteurPrixDessert').value) || 0) : 0 },
     ].map(t => ({ ...t, revente: round50(t.achat) }));
     const traiteurParts = traiteurPartsAll.filter(t => t.achat > 0);
     const traiteurPrixHTVA = traiteurParts.reduce((a, t) => a + t.achat, 0);
@@ -1966,7 +1968,8 @@
   // ne force rien si l'utilisateur la décoche ensuite).
   (function() {
     const toggle = $('traiteurNourriture');
-    ['traiteurPrixApero', 'traiteurPrixDessert'].forEach(id => $(id).addEventListener('input', () => { if ((parseFloat($(id).value) || 0) > 0 && toggle && !toggle.checked) { toggle.checked = true; calc(); } }));
+    [['traiteurPrixApero','traiteurApero'], ['traiteurPrixHTVA','traiteurPlat'], ['traiteurPrixDessert','traiteurDessert']].forEach(([id, cb]) => $(id).addEventListener('input', () => { if ((parseFloat($(id).value) || 0) > 0) { $(cb).checked = true; if (toggle) toggle.checked = true; calc(); } }));
+    ['traiteurApero','traiteurPlat','traiteurDessert'].forEach(cb => $(cb).addEventListener('change', () => { if ($(cb).checked && toggle && !toggle.checked) { toggle.checked = true; } calc(); }));
     const prix = $('traiteurPrixHTVA');
     if (prix && toggle) {
       prix.addEventListener('input', () => {
@@ -2144,7 +2147,7 @@
     ['animSurMesure','checkbox'], ['animSurMesureFacture','number'], ['coutAnimSurMesure','number'],
     ['garantieConso','checkbox'], ['garantieConsoFee','number'], ['garantieConsoMode','select'],
     ['traiteur','checkbox'], ['traiteurFee','number'],
-    ['traiteurNourriture','checkbox'], ['traiteurPrixApero','number'], ['traiteurPrixHTVA','number'], ['traiteurPrixDessert','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
+    ['traiteurNourriture','checkbox'], ['traiteurApero','checkbox'], ['traiteurPlat','checkbox'], ['traiteurDessert','checkbox'], ['traiteurPrixApero','number'], ['traiteurPrixHTVA','number'], ['traiteurPrixDessert','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
     ['nettoyage','checkbox'], ['nettoyageFee','number'],
     ['fraisEnergieRate','number'], ['fraisAssurance','number'], ['fraisPermis','number'],
     ['coutPersonnelHeure','number'], ['coutNettoyageReel','number'], ['coutMaterielAchatReel','number'], ['coutMaterielCadeauxReel','number'], ['coutMaterielPretReel','number'], ['coutAnimationReel','number'],
@@ -2197,6 +2200,11 @@
       if (type === 'checkbox') el.checked = !!state[id];
       else el.value = state[id];
     });
+    if (!('traiteurPlat' in state) && ('traiteurPrixHTVA' in state)) {
+      $('traiteurPlat').checked = (parseFloat(state.traiteurPrixHTVA) || 0) > 0;
+      $('traiteurApero').checked = false; $('traiteurDessert').checked = false;
+      $('traiteurPrixApero').value = 0; $('traiteurPrixDessert').value = 0;
+    }
     document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === window.activePreset));
     window._presetApplying = false;
     calc();
@@ -2358,7 +2366,7 @@
       animSurMesure: false, animSurMesureFacture: 0, coutAnimSurMesure: 0, animateurSupplementaire: false,
       garantieConso: false, garantieConsoFee: 0,
       traiteur: false, traiteurFee: 60,
-      traiteurNourriture: false, traiteurPrixApero: 0, traiteurPrixHTVA: 0, traiteurPrixDessert: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
+      traiteurNourriture: false, traiteurApero: false, traiteurPlat: false, traiteurDessert: false, traiteurPrixApero: 0, traiteurPrixHTVA: 0, traiteurPrixDessert: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
       nettoyage: false, nettoyageFee: 30,
       fraisEnergieRate: 10, fraisAssurance: 0, fraisPermis: 0,
       coutPersonnelHeure: 20, coutNettoyageReel: 30, coutMaterielAchatReel: 0, coutMaterielCadeauxReel: 0, coutMaterielPretReel: 0, coutAnimationReel: 0,

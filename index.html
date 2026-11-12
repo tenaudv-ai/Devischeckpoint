@@ -1545,7 +1545,11 @@
     // Une ligne par animation pour le devis client ; la préparation s'ajoute à la première animation.
     const animLignes = (() => {
       if (!animSimpleOn) return [];
-      const src = animHeuresFromTypes > 0 ? animTypesHeuresBreakdown.filter(t => t.h > 0) : [{ name: 'Animation', h: animHeuresUtiles }];
+      // L'Escape Box reste toujours sur le devis (80 € même à 0 h)
+      const esc = animTypesHeuresBreakdown.find(t => t.name === 'Escape Box');
+      const src = animHeuresFromTypes > 0
+        ? animTypesHeuresBreakdown.filter(t => t.h > 0 || t.name === 'Escape Box')
+        : [{ name: 'Animation', h: animHeuresUtiles }].concat(esc ? [esc] : []);
       return src.map((t, i) => {
         let val = t.h * animSimpleRate * nbAnimateurs;
         if (t.name === 'Escape Box') val += 80;
@@ -1638,7 +1642,7 @@
       { label: `Garantie de consommation (forfait)`, val: garantieConsoFee, on: garantieConsoOn && garantieConsoMode === 'forfait' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn },
-      ...animLignes.map((a, i) => ({ label: a.label, sub: `${a.h}h × ${animSimpleRate}€${nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : ''}${a.label.startsWith('Escape Box') ? ' + 80€ Escape Box' : ''}${i === 0 && animSimplePrep > 0 ? ' + ' + animSimplePrep + '€ préparation' : ''}`, val: a.val, on: true })),
+      ...animLignes.map((a, i) => ({ label: a.label, sub: `${a.h > 0 ? a.h + 'h × ' + animSimpleRate + '€' + (nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : '') : ''}${a.label.startsWith('Escape Box') ? (a.h > 0 ? ' + ' : '') + '80€ Escape Box' : ''}${i === 0 && animSimplePrep > 0 ? ' + ' + animSimplePrep + '€ préparation' : ''}`, val: a.val, on: true })),
       { label: `Animation sur mesure (forfait)`, val: animSurMesureFacture, on: animSurMesureOn },
       { label: `Gestion traiteur (forfait)`, val: traiteur, on: traiteurOn },
       { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers}€`, val: traiteurReventeTotal, on: traiteurNourritureOn },

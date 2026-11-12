@@ -664,6 +664,9 @@
           <label for="eventDate">Date de l'événement</label>
           <input type="date" id="eventDate">
         </div>
+        <div class="field">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="acompte" style="width:auto;"> Acompte de 30 % à la commande</label>
+        </div>
         <div class="field wide">
           <label for="clientAddress">Adresse du client</label>
           <textarea id="clientAddress" rows="2"></textarea>
@@ -1048,11 +1051,10 @@
           </div>
         </div>
         <div class="field">
-          <label>Prix du traiteur par personne (HTVA)<span class="hint"> — base du calcul « majoration +33 % sur le prix d'achat »</span></label>
-          <div class="rate-input">
-            <input type="number" id="traiteurPrixHTVA" min="0" step="0.5" value="0">
-            <span>€/invité HTVA</span>
-          </div>
+          <label>Prix d'achat traiteur par personne (HTVA)<span class="hint"> — chaque partie est revendue +33 %, arrondie au 0,50 € supérieur</span></label>
+          <div class="rate-input"><input type="number" id="traiteurPrixApero" min="0" step="0.5" value="0"><span>€/invité — Apéritif</span></div>
+          <div class="rate-input" style="margin-top:4px;"><input type="number" id="traiteurPrixHTVA" min="0" step="0.5" value="0"><span>€/invité — Plat</span></div>
+          <div class="rate-input" style="margin-top:4px;"><input type="number" id="traiteurPrixDessert" min="0" step="0.5" value="0"><span>€/invité — Dessert</span></div>
         </div>
         <div class="field">
           <label>Nourriture — prix de revente au client<span class="hint"> (laissez à 0 pour utiliser le calcul automatique ci-dessus ; sinon, ce montant prend le dessus)</span></label>
@@ -1564,23 +1566,35 @@
     const traiteurOn = $('traiteur').checked;
     const traiteur = traiteurOn ? (parseFloat($('traiteurFee').value) || 0) : 0;
     const traiteurNourritureOn = $('traiteurNourriture').checked;
-    const traiteurPrixHTVA = parseFloat($('traiteurPrixHTVA').value) || 0;
+    // Traiteur en 3 parties (le champ historique traiteurPrixHTVA = Plat)
+    const round50 = x => x > 0 ? Math.ceil(Math.round(x * 1.33 * 100) / 50) / 2 : 0;
+    const traiteurPartsAll = [
+      { name: 'Apéritif', achat: parseFloat($('traiteurPrixApero').value) || 0 },
+      { name: 'Plat', achat: parseFloat($('traiteurPrixHTVA').value) || 0 },
+      { name: 'Dessert', achat: parseFloat($('traiteurPrixDessert').value) || 0 },
+    ].map(t => ({ ...t, revente: round50(t.achat) }));
+    const traiteurParts = traiteurPartsAll.filter(t => t.achat > 0);
+    const traiteurPrixHTVA = traiteurParts.reduce((a, t) => a + t.achat, 0);
     const traiteurReventePersManuel = parseFloat($('traiteurReventePers').value) || 0;
     // Prix de revente auto = prix HTVA × 1.33 (marge 33 % sur HTVA).
     // La TVA 6 % payée au traiteur est récupérable, elle n'est pas un coût pour le Checkpoint.
     // La TVA 12 % « nourriture revendue » est appliquée ensuite au devis client via tvaNourriture.
     // Arrondi au 0,50 € supérieur (13,30 € → 13,50 €)
-    const traiteurReventeAuto = traiteurPrixHTVA > 0 ? Math.ceil(Math.round(traiteurPrixHTVA * 1.33 * 100) / 50) / 2 : 0;
+    const traiteurReventeAuto = traiteurParts.reduce((a, t) => a + t.revente, 0);
     const traiteurReventePers = traiteurReventePersManuel > 0 ? traiteurReventePersManuel : traiteurReventeAuto;
     const traiteurReventeTotal = traiteurNourritureOn ? personnes * traiteurReventePers : 0;
+    // Lignes du devis : une par partie, sauf si la revente est forcée manuellement
+    const traiteurLignes = !traiteurNourritureOn ? [] : (traiteurReventePersManuel > 0 || traiteurParts.length === 0)
+      ? [{ label: 'Traiteur (nourriture)', pers: traiteurReventePers }]
+      : traiteurParts.map(t => ({ label: 'Traiteur — ' + t.name, pers: t.revente }));
     // Affichage du coût calculé dans Prestations
     const coutInfoEl = $('coutTraiteurInfo');
     if (coutInfoEl) {
       if (traiteurPrixHTVA > 0 || traiteurReventePersManuel > 0) {
         coutInfoEl.style.display = 'block';
         const reventeUsed = traiteurReventePers;
-        $('coutTraiteurBase').textContent = fmt(traiteurPrixHTVA);
-        $('coutTraiteurVal').innerHTML = fmt(reventeUsed) + (traiteurReventePersManuel > 0
+        $('coutTraiteurBase').textContent = fmt(traiteurPrixHTVA) + (traiteurParts.length > 1 ? ' (' + traiteurParts.map(t => t.name + ' ' + fmt(t.achat)).join(' + ') + ')' : '');
+        $('coutTraiteurVal').innerHTML = fmt(reventeUsed) + (traiteurReventePersManuel === 0 && traiteurParts.length > 1 ? ' (' + traiteurParts.map(t => t.name + ' ' + fmt(t.revente)).join(' + ') + ')' : '') + (traiteurReventePersManuel > 0
           ? ' <span style="color:var(--amber); font-size:11px; font-weight:600;">⚠ forcé manuellement</span>'
           : '');
         $('coutTraiteurMarge').textContent = fmt(reventeUsed - traiteurPrixHTVA);
@@ -1645,7 +1659,7 @@
       ...animLignes.map((a, i) => ({ label: a.label, sub: `${a.h > 0 ? a.h + 'h × ' + animSimpleRate + '€' + (nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : '') : ''}${a.label.startsWith('Escape Box') ? (a.h > 0 ? ' + ' : '') + '80€ Escape Box' : ''}${i === 0 && animSimplePrep > 0 ? ' + ' + animSimplePrep + '€ préparation' : ''}`, val: a.val, on: true })),
       { label: `Animation sur mesure (forfait)`, val: animSurMesureFacture, on: animSurMesureOn },
       { label: `Gestion traiteur (forfait)`, val: traiteur, on: traiteurOn },
-      { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers}€`, val: traiteurReventeTotal, on: traiteurNourritureOn },
+      ...traiteurLignes.map(t => ({ label: t.label, sub: `${personnes} invités × ${t.pers}€`, val: personnes * t.pers, on: true })),
       { label: `Nettoyage (forfait)`, val: nettoyage, on: nettoyageOn },
       { label: `Matériel`, sub: materielParts.join(', '), val: materiel, on: materielOn },
     ];
@@ -1660,7 +1674,7 @@
       ...animLignes.map(a => ({ label: a.label, val: a.val, on: true, tva: tvaRate('tvaAnimation'), group: 'Service Animation' })),
       { label: `Animation sur mesure`, val: animSurMesureFacture, on: animSurMesureOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
       { label: `Service traiteur`, val: traiteur, on: traiteurOn, tva: tvaRate('tvaTraiteur'), group: 'Service Traiteur' },
-      { label: `Traiteur (nourriture)`, sub: `${personnes} invités × ${traiteurReventePers.toFixed(2)}€`, val: traiteurReventeTotal, on: traiteurNourritureOn, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' },
+      ...traiteurLignes.map(t => ({ label: t.label, sub: `${personnes} invités × ${t.pers.toFixed(2)}€`, val: personnes * t.pers, on: true, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' })),
       { label: `Nettoyage`, val: nettoyage, on: nettoyageOn && nettoyage > 0, tva: tvaRate('tvaNettoyage'), group: 'Service Entretien' },
     ];
     if (materielAchatOn) clientItems.push({ label: 'Achat de matériel', val: materielAchat, on: true, tva: tvaRate('tvaMaterielAchat'), group: 'Service Matériel' });
@@ -1787,6 +1801,8 @@
         ${Object.entries(tvaSummary).sort().map(([rate, amt]) => `<div style="display:flex; justify-content:space-between;"><span>TVA ${rate} %</span><span style="font-variant-numeric:tabular-nums;">${fmt(amt)}</span></div>`).join('')}
         <div style="display:flex; justify-content:space-between; color:var(--ink); padding-top:4px; border-top:1px dashed var(--line-soft);"><span>Total TVA</span><span style="font-variant-numeric:tabular-nums;">${fmt(totalTVA)}</span></div>
         <div style="display:flex; justify-content:space-between; font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--felt-dark); padding-top:6px; margin-top:4px; border-top:2px solid var(--felt);"><span>Total TVAC — à payer par le client</span><span style="font-variant-numeric:tabular-nums;">${fmt(totalTVAC)}</span></div>
+        ${$('acompte').checked ? `<div style="display:flex; justify-content:space-between; color:var(--ink); padding-top:6px;"><span>Acompte 30 % à la commande</span><span style="font-variant-numeric:tabular-nums; font-weight:600;">${fmt(Math.round(totalTVAC * 30) / 100)}</span></div>
+        <div style="display:flex; justify-content:space-between; color:var(--ink);"><span>Solde à payer</span><span style="font-variant-numeric:tabular-nums;">${fmt(totalTVAC - Math.round(totalTVAC * 30) / 100)}</span></div>` : ''}
       </div>`;
     const tvaBreakdownEl = document.getElementById('tvaBreakdown');
     if (tvaBreakdownEl) tvaBreakdownEl.innerHTML = tvaBreakdownHTML;
@@ -1896,6 +1912,7 @@
       items: items.filter(i => i.on), recettesLines, coutsLines,
       heures, personnes, creneauChoix, alerts, blockers,
       clientBreakdown, totalHTVA, totalTVAC, tvaSummary, tvaInclus,
+      acompte: $('acompte').checked ? Math.round(totalTVAC * 0.30 * 100) / 100 : 0,
       garantieConsoMinimum: garantieConsoOn && garantieConsoMode === 'minimum' ? garantieConsoMinimum : 0,
     };
 
@@ -1948,8 +1965,9 @@
   // Prix du traiteur renseigné → auto-coche la prestation Traiteur (confort de saisie,
   // ne force rien si l'utilisateur la décoche ensuite).
   (function() {
-    const prix = $('traiteurPrixHTVA');
     const toggle = $('traiteurNourriture');
+    ['traiteurPrixApero', 'traiteurPrixDessert'].forEach(id => $(id).addEventListener('input', () => { if ((parseFloat($(id).value) || 0) > 0 && toggle && !toggle.checked) { toggle.checked = true; calc(); } }));
+    const prix = $('traiteurPrixHTVA');
     if (prix && toggle) {
       prix.addEventListener('input', () => {
         const v = parseFloat(prix.value) || 0;
@@ -2126,7 +2144,7 @@
     ['animSurMesure','checkbox'], ['animSurMesureFacture','number'], ['coutAnimSurMesure','number'],
     ['garantieConso','checkbox'], ['garantieConsoFee','number'], ['garantieConsoMode','select'],
     ['traiteur','checkbox'], ['traiteurFee','number'],
-    ['traiteurNourriture','checkbox'], ['traiteurPrixHTVA','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
+    ['traiteurNourriture','checkbox'], ['traiteurPrixApero','number'], ['traiteurPrixHTVA','number'], ['traiteurPrixDessert','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
     ['nettoyage','checkbox'], ['nettoyageFee','number'],
     ['fraisEnergieRate','number'], ['fraisAssurance','number'], ['fraisPermis','number'],
     ['coutPersonnelHeure','number'], ['coutNettoyageReel','number'], ['coutMaterielAchatReel','number'], ['coutMaterielCadeauxReel','number'], ['coutMaterielPretReel','number'], ['coutAnimationReel','number'],
@@ -2139,7 +2157,7 @@
     ['tvaAccesBar','number'], ['tvaEquipe','number'], ['tvaLocationSalle','number'], ['tvaAnimation','number'],
     ['tvaTraiteur','number'], ['tvaNettoyage','number'], ['tvaMaterielAchat','number'], ['tvaMaterielCadeaux','number'],
     ['tvaMaterielPret','number'], ['tvaNourriture','number'], ['tvaAchatTraiteur','number'],
-    ['devisRef','text'], ['clientName','text'], ['clientEmail','text'], ['devisDate','text'], ['eventDate','text'],
+    ['devisRef','text'], ['clientName','text'], ['clientEmail','text'], ['devisDate','text'], ['eventDate','text'], ['acompte','checkbox'],
     ['clientAddress','text'], ['devisNotes','text'],
   ];
 
@@ -2340,7 +2358,7 @@
       animSurMesure: false, animSurMesureFacture: 0, coutAnimSurMesure: 0, animateurSupplementaire: false,
       garantieConso: false, garantieConsoFee: 0,
       traiteur: false, traiteurFee: 60,
-      traiteurNourriture: false, traiteurPrixHTVA: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
+      traiteurNourriture: false, traiteurPrixApero: 0, traiteurPrixHTVA: 0, traiteurPrixDessert: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
       nettoyage: false, nettoyageFee: 30,
       fraisEnergieRate: 10, fraisAssurance: 0, fraisPermis: 0,
       coutPersonnelHeure: 20, coutNettoyageReel: 30, coutMaterielAchatReel: 0, coutMaterielCadeauxReel: 0, coutMaterielPretReel: 0, coutAnimationReel: 0,
@@ -2353,7 +2371,7 @@
       tvaAccesBar: 21, tvaEquipe: 21, tvaLocationSalle: 21, tvaAnimation: 21,
       tvaTraiteur: 21, tvaNettoyage: 21, tvaMaterielAchat: 21, tvaMaterielCadeaux: 21,
       tvaMaterielPret: 21, tvaNourriture: 12, tvaAchatTraiteur: 6,
-      devisRef: '', clientName: '', clientEmail: '', devisDate: todayISO(), eventDate: '', clientAddress: '', devisNotes: '',
+      devisRef: '', clientName: '', clientEmail: '', devisDate: todayISO(), eventDate: '', acompte: false, clientAddress: '', devisNotes: '',
     });
     $('devisName').value = '';
     $('coutAnimationReel').dataset.auto = 'true';
@@ -2494,6 +2512,15 @@
       doc.setFont('helvetica', 'bold'); doc.setFontSize(13);
       doc.text('Total TVAC', 15, y);
       doc.text(fmtPdf(c.totalTVAC), 195, y, { align: 'right' }); y += 12;
+      if (c.acompte > 0) {
+        ensureSpace(14);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+        doc.text(pdfSafe('Acompte de 30 % à la commande'), 15, y);
+        doc.text(fmtPdf(c.acompte), 195, y, { align: 'right' }); y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.text(pdfSafe('Solde à payer'), 15, y);
+        doc.text(fmtPdf(c.totalTVAC - c.acompte), 195, y, { align: 'right' }); y += 10;
+      }
 
       // Minimum de consommation garanti (s'il est en mode « minimum »)
       if (c.garantieConsoMinimum > 0) {
@@ -2594,6 +2621,7 @@
         <span>Total TVAC</span>
         <span>${esc(fmt(c.totalTVAC))}</span>
       </div>
+      ${c.acompte > 0 ? `<div style="display:flex; justify-content:space-between; margin-top:8px; font-size:13px; font-weight:600;"><span>Acompte de 30 % à la commande</span><span>${esc(fmt(c.acompte))}</span></div><div style="display:flex; justify-content:space-between; font-size:13px;"><span>Solde à payer</span><span>${esc(fmt(c.totalTVAC - c.acompte))}</span></div>` : ''}
       ${c.garantieConsoMinimum > 0 ? `<div style="margin-top:12px; padding:10px 12px; background:#f6f1e3; border-left:3px solid #c88a2e; border-radius:4px; font-size:12.5px; color:#1f2a3c;"><strong>Minimum de consommation garanti : ${esc(fmt(c.garantieConsoMinimum))}</strong><br><span style="color:#5b6472;">À consommer sur place. Ce montant n'est pas ajouté au prix des prestations ci-dessus.</span></div>` : ''}
       ${userNotes ? `<div style="margin-top:16px; font-size:12.5px; color:#1f2a3c;"><strong>Notes et conditions</strong><div style="white-space:pre-wrap; margin-top:4px;">${esc(userNotes)}</div></div>` : ''}
       <div style="margin-top:14px; font-size:11px; color:#5b6472; font-style:italic;">Les consommations éventuelles sont à régler sur place, sauf accord contraire précisé au devis.</div>

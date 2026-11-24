@@ -600,7 +600,7 @@
 </style>
 <div class="wrap">
   <header class="top">
-    <p class="kicker">Le Checkpoint — outil interne</p>
+    <p class="kicker">Le Checkpoint — outil interne · <span id="appVersion" title="Version du calculateur">Version 2026-11-24.3</span></p>
     <h1>Devis</h1>
     <p class="sub">Préparation de devis et estimation de la marge d’un événement au bar. Les tarifs marqués <span class="tbd">à définir</span> sont modifiables directement dans les champs.</p>
   </header>
@@ -931,6 +931,15 @@
             </div>
             <div style="color:var(--ink-soft); font-size:11px; margin-top:6px; font-style:italic;">TVA 6 % traiteur récupérable (hors coût). TVA 12 % nourriture appliquée au client via le taux « Nourriture revendue ».</div>
           </div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="traiteurADefinir">
+        <div class="txt" style="flex:1;">
+          <strong>Traiteur à définir</strong>
+          <div class="hint">Propositions de restauration affichées à la fin du devis, non comprises dans le total — le client choisira plus tard. Une proposition par ligne ; une ligne commençant par # devient un titre de section (ex. « # Traiteur chaud »).</div>
+          <textarea id="traiteurADefinirTexte" rows="6" style="width:100%; box-sizing:border-box; margin-top:6px; font:inherit; font-size:13px; padding:6px 8px; border:1px solid var(--line); border-radius:4px;" placeholder="Apéritif — Planche fromage, saucisson et olives : 12 € (pour 3 personnes)&#10;Apéritif — 3 bouchées apéritives : 5 €/personne&#10;Plat — Pâtes bolognaise au parmesan : 14 €/personne&#10;Dessert — Mousse au chocolat : 5 €/personne"></textarea>
         </div>
       </div>
 
@@ -1658,7 +1667,7 @@
     const prixDevis = base + garantieConsoFee + equipe + locationSalle + animSimple + animSurMesureFacture + traiteur + traiteurReventeTotal + nettoyage + materiel;
 
     const items = [
-      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, warn: tarifNonDefini ? '⚠ tarif à 0 €/h : à renseigner dans « Créneau »' : null, val: base, on: base > 0 },
+      { label: `${creneauChoix === 'ferme' ? 'Location privée du Checkpoint et Service Bar' : 'Accès bar'} (${heures}h × ${creneauRateVal}€)`, warn: tarifNonDefini ? '⚠ tarif à 0 €/h : à renseigner dans « Créneau »' : null, val: base, on: base > 0 },
       { label: `Garantie de consommation (forfait)`, val: garantieConsoFee, on: garantieConsoOn && garantieConsoMode === 'forfait' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn },
@@ -1673,7 +1682,7 @@
     // Détail pour le devis client — items avec TVA par poste (Matériel scindé)
     const tvaRate = id => parseFloat($(id).value) || 0;
     const clientItems = [
-      { label: `Accès bar (${heures}h × ${creneauRateVal}€)`, val: base, on: base > 0, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
+      { label: `${creneauChoix === 'ferme' ? 'Location privée du Checkpoint et Service Bar' : 'Accès bar'} (${heures}h × ${creneauRateVal}€)`, val: base, on: base > 0, tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
       { label: `Garantie de consommation (forfait)`, val: garantieConsoFee, on: garantieConsoOn && garantieConsoMode === 'forfait', tva: tvaRate('tvaAccesBar'), group: 'Service Bar' },
       { label: `Présence équipe`, sub: `${equipeStaff}p. × ${heures}h × ${equipeRate}€`, val: equipe, on: $('equipe').checked, tva: tvaRate('tvaEquipe'), group: 'Service Bar' },
       { label: `Location salle`, sub: locationSalleMode === 'heure' ? `${heures}h × ${locationSalleFeeVal}€/h` : `${locationSalleFeeVal}€ forfait`, val: locationSalle, on: locationSalleOn, tva: tvaRate('tvaLocationSalle'), group: 'Service Bar' },
@@ -1694,7 +1703,7 @@
 
     // ----- Calcul HTVA / TVA / TVAC pour l'affichage et pour la marge -----
     const tvaInclus = $('tvaInclus').checked;
-    const clientBreakdown = clientItems.filter(i => i.on).map(it => {
+    const clientBreakdown = clientItems.filter(i => i.on && Math.abs(i.val || 0) >= 0.005).map(it => {
       const htva = round2(tvaInclus ? it.val / (1 + it.tva / 100) : it.val);
       const tvac = round2(tvaInclus ? it.val : it.val * (1 + it.tva / 100));
       return { ...it, htva, tvac, tvaAmount: round2(tvac - htva) };
@@ -2165,7 +2174,7 @@
     ['tvaTraiteur','number'], ['tvaNettoyage','number'], ['tvaMaterielAchat','number'], ['tvaMaterielCadeaux','number'],
     ['tvaMaterielPret','number'], ['tvaNourriture','number'], ['tvaAchatTraiteur','number'],
     ['devisRef','text'], ['clientName','text'], ['clientEmail','text'], ['devisDate','text'], ['eventDate','text'], ['acompte','checkbox'],
-    ['clientAddress','text'], ['devisNotes','text'],
+    ['clientAddress','text'], ['devisNotes','text'], ['traiteurADefinir','checkbox'], ['traiteurADefinirTexte','text'],
   ];
 
   function getState() {
@@ -2383,7 +2392,7 @@
       tvaAccesBar: 21, tvaEquipe: 21, tvaLocationSalle: 21, tvaAnimation: 21,
       tvaTraiteur: 21, tvaNettoyage: 21, tvaMaterielAchat: 21, tvaMaterielCadeaux: 21,
       tvaMaterielPret: 21, tvaNourriture: 12, tvaAchatTraiteur: 6,
-      devisRef: '', clientName: '', clientEmail: '', devisDate: todayISO(), eventDate: '', acompte: false, clientAddress: '', devisNotes: '',
+      devisRef: '', clientName: '', clientEmail: '', devisDate: todayISO(), eventDate: '', acompte: false, clientAddress: '', devisNotes: '', traiteurADefinir: false, traiteurADefinirTexte: '',
     });
     $('devisName').value = '';
     $('coutAnimationReel').dataset.auto = 'true';
@@ -2523,9 +2532,9 @@
       if (c.garantieConsoMinimum > 0) {
         ensureSpace(14);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0);
-        doc.text(pdfSafe('Minimum de consommation garanti : ' + fmt(c.garantieConsoMinimum)), 15, y); y += 5;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(100);
-        const msg = `À consommer sur place. Ce montant n'est pas ajouté au prix des prestations ci-dessus.`;
+        const eur2 = v => v.toFixed(2).replace('.', ',') + ' €';
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(30);
+        const msg = `Minimum de consommation de ${eur2(c.garantieConsoMinimum)} dans le cadre de la privatisation. Les boissons sont consommées au bar et facturées aux tarifs habituels du Checkpoint. Si la consommation est inférieure à ${eur2(c.garantieConsoMinimum)}, la différence est facturée pour atteindre le minimum. Si elle dépasse ${eur2(c.garantieConsoMinimum)}, seul le montant réellement consommé est facturé : aucun supplément n'est ajouté.`;
         doc.splitTextToSize(pdfSafe(msg), 180).forEach(l => { ensureSpace(4); doc.text(l, 15, y); y += 4; });
         doc.setTextColor(0); y += 4;
       }
@@ -2537,6 +2546,26 @@
         doc.text('Notes et conditions', 15, y); y += 6;
         doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
         doc.splitTextToSize(pdfSafe(userNotes), 180).forEach(line => { ensureSpace(5); doc.text(line, 15, y); y += 4.5; });
+        y += 6;
+      }
+      const propTraiteur = $('traiteurADefinir').checked ? $('traiteurADefinirTexte').value.split('\n').map(l => l.trim()).filter(Boolean) : [];
+      if (propTraiteur.length) {
+        ensureSpace(20);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(0);
+        doc.text(pdfSafe('Traiteur à définir — propositions'), 15, y); y += 5;
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(90);
+        doc.text(pdfSafe('À choisir ultérieurement avec vous. Ces propositions ne sont pas comprises dans le total ci-dessus. Prix TVA comprise.'), 15, y); y += 5;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(0);
+        propTraiteur.forEach(l => {
+          if (l.startsWith('#')) {
+            ensureSpace(9); y += 1.5;
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+            doc.text(pdfSafe(l.replace(/^#+\s*/, '')), 15, y); y += 5;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+            return;
+          }
+          doc.splitTextToSize(pdfSafe('- ' + l.replace(/^[•\-*]\s*/, '')), 172).forEach((line, i) => { ensureSpace(5); doc.text(line, i ? 22 : 18, y); y += 4.5; });
+        });
         y += 6;
       }
       doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90);
@@ -2614,8 +2643,9 @@
         <span>${esc(fmt(c.totalTVAC))}</span>
       </div>
       ${c.acompte > 0 ? `<div style="display:flex; justify-content:space-between; margin-top:8px; font-size:13px; font-weight:600;"><span>Acompte de 30 % à la commande</span><span>${esc(fmt(c.acompte))}</span></div><div style="display:flex; justify-content:space-between; font-size:13px;"><span>Solde à payer</span><span>${esc(fmt(c.totalTVAC - c.acompte))}</span></div>` : ''}
-      ${c.garantieConsoMinimum > 0 ? `<div style="margin-top:12px; padding:10px 12px; background:#f6f1e3; border-left:3px solid #c88a2e; border-radius:4px; font-size:12.5px; color:#1f2a3c;"><strong>Minimum de consommation garanti : ${esc(fmt(c.garantieConsoMinimum))}</strong><br><span style="color:#5b6472;">À consommer sur place. Ce montant n'est pas ajouté au prix des prestations ci-dessus.</span></div>` : ''}
+      ${c.garantieConsoMinimum > 0 ? `<div style="margin-top:12px; padding:10px 12px; background:#f6f1e3; border-left:3px solid #c88a2e; border-radius:4px; font-size:12.5px; color:#1f2a3c;">${(() => { const eur2 = v => v.toFixed(2).replace('.', ',') + ' €'; return `<span>${esc(`Minimum de consommation de ${eur2(c.garantieConsoMinimum)} dans le cadre de la privatisation. Les boissons sont consommées au bar et facturées aux tarifs habituels du Checkpoint. Si la consommation est inférieure à ${eur2(c.garantieConsoMinimum)}, la différence est facturée pour atteindre le minimum. Si elle dépasse ${eur2(c.garantieConsoMinimum)}, seul le montant réellement consommé est facturé : aucun supplément n'est ajouté.`)}</span>`; })()}</div>` : ''}
       ${userNotes ? `<div style="margin-top:16px; font-size:12.5px; color:#1f2a3c;"><strong>Notes et conditions</strong><div style="white-space:pre-wrap; margin-top:4px;">${esc(userNotes)}</div></div>` : ''}
+      ${(() => { const props = $('traiteurADefinir').checked ? $('traiteurADefinirTexte').value.split('\n').map(l => l.trim()).filter(Boolean) : []; return props.length ? `<div style="margin-top:16px; font-size:12.5px; color:#1f2a3c;"><strong>Traiteur à définir — propositions</strong><div style="font-size:11px; color:#5b6472; font-style:italic; margin:2px 0 4px;">À choisir ultérieurement avec vous. Ces propositions ne sont pas comprises dans le total ci-dessus. Prix TVA comprise.</div>${(() => { let html = '', open = false; props.forEach(l => { if (l.startsWith('#')) { if (open) html += '</ul>'; html += `<div style="font-weight:600; margin-top:8px;">${esc(l.replace(/^#+\s*/, ''))}</div>`; open = false; } else { if (!open) { html += '<ul style="margin:2px 0 0; padding-left:18px;">'; open = true; } html += `<li>${esc(l.replace(/^[•\-*]\s*/, ''))}</li>`; } }); return html + (open ? '</ul>' : ''); })()}</div>` : ''; })()}
       <div style="margin-top:14px; font-size:11px; color:#5b6472; font-style:italic;">Les consommations éventuelles sont à régler sur place, sauf accord contraire précisé au devis.</div>
       <div style="margin-top:20px; text-align:right;">
         <button type="button" data-close style="padding:8px 16px; border:1px solid #c9c0ac; background:#efeae0; border-radius:6px; cursor:pointer; font-family:Inter,sans-serif; font-size:13px;">Fermer</button>

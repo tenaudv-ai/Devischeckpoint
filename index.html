@@ -600,7 +600,7 @@
 </style>
 <div class="wrap">
   <header class="top">
-    <p class="kicker">Le Checkpoint — outil interne · <span id="appVersion" title="Version du calculateur">Version 2026-11-24.3</span></p>
+    <p class="kicker">Le Checkpoint — outil interne · <span id="appVersion" title="Version du calculateur">Version 2026-11-26.1</span></p>
     <h1>Devis</h1>
     <p class="sub">Préparation de devis et estimation de la marge d’un événement au bar. Les tarifs marqués <span class="tbd">à définir</span> sont modifiables directement dans les champs.</p>
   </header>
@@ -907,6 +907,19 @@
         <div class="txt">
           <strong>Gestion traiteur</strong>
           <div class="hint">Coordination d'un prestataire externe — mail / commande / service / matériel / nettoyage +</div>
+        </div>
+      </div>
+
+      <div class="toggle-line">
+        <input type="checkbox" id="serviceTraiteur">
+        <div class="txt">
+          <strong>Service traiteur (personne en plus)</strong>
+          <div class="hint">Personne qui vient uniquement pour servir le repas (ex. traiteur chaud). Facturée au tarif « Présence équipe ».
+            <div class="rate-input" style="margin-top:4px;">
+              <input type="number" id="serviceTraiteurStaff" min="0" step="1" value="1" style="width:60px;"><span>pers. ×</span>
+              <input type="number" id="serviceTraiteurH" min="0" step="0.5" value="2" style="width:60px;"><span>h</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1576,6 +1589,11 @@
 
     const traiteurOn = $('traiteur').checked;
     const traiteur = traiteurOn ? (parseFloat($('traiteurFee').value) || 0) : 0;
+    // Service traiteur : personne(s) en plus, uniquement pour le service du repas
+    const serviceTraiteurOn = $('serviceTraiteur').checked;
+    const serviceTraiteurStaff = Math.max(0, parseFloat($('serviceTraiteurStaff').value) || 0);
+    const serviceTraiteurH = Math.max(0, parseFloat($('serviceTraiteurH').value) || 0);
+    const serviceTraiteur = serviceTraiteurOn ? serviceTraiteurStaff * serviceTraiteurH * equipeRate : 0;
     const traiteurNourritureOn = $('traiteurNourriture').checked;
     // Traiteur en 3 parties (le champ historique traiteurPrixHTVA = Plat)
     // Revente = achat × 1,33 ; c'est le prix TVAC (TVA nourriture) qui est arrondi au 0,50 € supérieur.
@@ -1664,7 +1682,7 @@
     if (materielCadeauxOn) materielParts.push(`cadeaux ${fmt(materielCadeaux)}`);
     if (materielPretOn) materielParts.push(`prêt ${fmt(materielPret)}`);
 
-    const prixDevis = base + garantieConsoFee + equipe + locationSalle + animSimple + animSurMesureFacture + traiteur + traiteurReventeTotal + nettoyage + materiel;
+    const prixDevis = base + garantieConsoFee + equipe + locationSalle + animSimple + animSurMesureFacture + traiteur + serviceTraiteur + traiteurReventeTotal + nettoyage + materiel;
 
     const items = [
       { label: `${creneauChoix === 'ferme' ? 'Location privée du Checkpoint et Service Bar' : 'Accès bar'} (${heures}h × ${creneauRateVal}€)`, warn: tarifNonDefini ? '⚠ tarif à 0 €/h : à renseigner dans « Créneau »' : null, val: base, on: base > 0 },
@@ -1674,6 +1692,7 @@
       ...animLignes.map((a, i) => ({ label: a.label, sub: `${a.h > 0 ? a.h + 'h × ' + animSimpleRate + '€' + (nbAnimateurs > 1 ? ' × ' + nbAnimateurs + ' animateurs' : '') : ''}${a.label.startsWith('Escape Box') ? (a.h > 0 ? ' + ' : '') + '80€ Escape Box' : ''}${i === 0 && animSimplePrep > 0 ? ' + ' + animSimplePrep + '€ préparation' : ''}`, val: a.val, on: true })),
       { label: `Animation sur mesure (forfait)`, val: animSurMesureFacture, on: animSurMesureOn },
       { label: `Gestion traiteur (forfait)`, val: traiteur, on: traiteurOn },
+      { label: `Personnel de service (repas)`, sub: `${serviceTraiteurStaff}p. × ${serviceTraiteurH}h × ${equipeRate}€`, val: serviceTraiteur, on: serviceTraiteurOn },
       ...traiteurLignes.map(t => ({ label: t.label, sub: t.persTVAC ? `${personnes} invités × ${fmt(t.persTVAC)} TVAC` : `${personnes} invités × ${fmt(t.pers)}`, val: personnes * t.pers, on: true })),
       { label: `Nettoyage (forfait)`, val: nettoyage, on: nettoyageOn },
       { label: `Matériel`, sub: materielParts.join(', '), val: materiel, on: materielOn },
@@ -1689,6 +1708,7 @@
       ...animLignes.map(a => ({ label: a.label, val: a.val, on: true, tva: tvaRate('tvaAnimation'), group: 'Service Animation' })),
       { label: `Animation sur mesure`, val: animSurMesureFacture, on: animSurMesureOn, tva: tvaRate('tvaAnimation'), group: 'Service Animation' },
       { label: `Service traiteur`, val: traiteur, on: traiteurOn, tva: tvaRate('tvaTraiteur'), group: 'Service Traiteur' },
+      { label: `Personnel de service (repas)`, sub: `${serviceTraiteurStaff} pers. × ${serviceTraiteurH} h`, val: serviceTraiteur, on: serviceTraiteurOn, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' },
       ...traiteurLignes.map(t => ({ label: t.label, sub: t.persTVAC ? `${personnes} invités × ${t.persTVAC.toFixed(2).replace('.', ',')} € TVAC` : `${personnes} invités × ${t.pers.toFixed(2)}€`, val: personnes * t.pers, on: true, tva: tvaRate('tvaNourriture'), group: 'Service Traiteur' })),
       { label: `Nettoyage`, val: nettoyage, on: nettoyageOn && nettoyage > 0, tva: tvaRate('tvaNettoyage'), group: 'Service Entretien' },
     ];
@@ -1775,8 +1795,9 @@
     // Équipe bar sur toute la durée du créneau ; animateurs sur la somme des heures dédiées à l'animation.
     const coutEquipe = ($('equipe').checked ? equipeStaff : 0) * heures * coutPersonnelHeureVal;
     const coutAnimateurs = animatorsInCost * animHeuresUtiles * coutPersonnelHeureVal;
-    const coutPersonnelCount = ($('equipe').checked ? equipeStaff : 0) + animatorsInCost;
-    const coutPersonnel = coutEquipe + coutAnimateurs;
+    const coutPersonnelCount = ($('equipe').checked ? equipeStaff : 0) + animatorsInCost + (serviceTraiteurOn ? serviceTraiteurStaff : 0);
+    const coutServiceTraiteur = serviceTraiteurOn ? serviceTraiteurStaff * serviceTraiteurH * coutPersonnelHeureVal : 0;
+    const coutPersonnel = coutEquipe + coutAnimateurs + coutServiceTraiteur;
     const coutNettoyageVal = nettoyageOn ? (parseFloat($('coutNettoyageReel').value) || 0) : 0;
     const coutTraiteurAchatTotal = traiteurNourritureOn ? personnes * coutTraiteurAchatPers : 0;
     const coutMaterielAchatVal = materielAchatOn ? (parseFloat($('coutMaterielAchatReel').value) || 0) : 0;
@@ -1792,7 +1813,7 @@
       { label: 'Énergie', sub: `${heures}h × ${fraisEnergieRateVal}€/h`, val: coutEnergie },
       { label: 'Assurances', val: fraisAssuranceVal },
       { label: 'Permis / accord commune', val: fraisPermisVal },
-      { label: 'Personnel', sub: `${coutPersonnelCount} personne(s) × ${heures}h × ${coutPersonnelHeureVal}€/h`, val: coutPersonnel },
+      { label: 'Personnel', sub: `${coutPersonnelCount} personne(s) × ${coutPersonnelHeureVal}€/h${serviceTraiteurOn ? ` (dont service repas ${serviceTraiteurStaff}p. × ${serviceTraiteurH}h)` : ''}`, val: coutPersonnel },
       { label: 'Nettoyage', val: coutNettoyageVal, on: nettoyageOn },
     ];
     if (materielOn) {
@@ -2160,7 +2181,7 @@
     ['animSurMesure','checkbox'], ['animSurMesureFacture','number'], ['coutAnimSurMesure','number'],
     ['garantieConso','checkbox'], ['garantieConsoFee','number'], ['garantieConsoMode','select'],
     ['traiteur','checkbox'], ['traiteurFee','number'],
-    ['traiteurNourriture','checkbox'], ['traiteurApero','checkbox'], ['traiteurPlat','checkbox'], ['traiteurDessert','checkbox'], ['traiteurPrixApero','number'], ['traiteurPrixHTVA','number'], ['traiteurPrixDessert','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
+    ['serviceTraiteur','checkbox'], ['serviceTraiteurStaff','number'], ['serviceTraiteurH','number'], ['traiteurNourriture','checkbox'], ['traiteurApero','checkbox'], ['traiteurPlat','checkbox'], ['traiteurDessert','checkbox'], ['traiteurPrixApero','number'], ['traiteurPrixHTVA','number'], ['traiteurPrixDessert','number'], ['traiteurReventePers','number'], ['coutTraiteurAchatPers','number'],
     ['nettoyage','checkbox'], ['nettoyageFee','number'],
     ['fraisEnergieRate','number'], ['fraisAssurance','number'], ['fraisPermis','number'],
     ['coutPersonnelHeure','number'], ['coutNettoyageReel','number'], ['coutMaterielAchatReel','number'], ['coutMaterielCadeauxReel','number'], ['coutMaterielPretReel','number'], ['coutAnimationReel','number'],
@@ -2379,7 +2400,7 @@
       animSurMesure: false, animSurMesureFacture: 0, coutAnimSurMesure: 0, animateurSupplementaire: false,
       garantieConso: false, garantieConsoFee: 0,
       traiteur: false, traiteurFee: 60,
-      traiteurNourriture: false, traiteurApero: false, traiteurPlat: false, traiteurDessert: false, traiteurPrixApero: 0, traiteurPrixHTVA: 0, traiteurPrixDessert: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
+      serviceTraiteur: false, serviceTraiteurStaff: 1, serviceTraiteurH: 2, traiteurNourriture: false, traiteurApero: false, traiteurPlat: false, traiteurDessert: false, traiteurPrixApero: 0, traiteurPrixHTVA: 0, traiteurPrixDessert: 0, traiteurReventePers: 0, coutTraiteurAchatPers: 0,
       nettoyage: false, nettoyageFee: 30,
       fraisEnergieRate: 10, fraisAssurance: 0, fraisPermis: 0,
       coutPersonnelHeure: 20, coutNettoyageReel: 30, coutMaterielAchatReel: 0, coutMaterielCadeauxReel: 0, coutMaterielPretReel: 0, coutAnimationReel: 0,

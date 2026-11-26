@@ -600,8 +600,8 @@
 </style>
 <div class="wrap">
   <header class="top">
-    <p class="kicker">Le Checkpoint — outil interne · <span id="appVersion" title="Version du calculateur">Version 2026-11-26.1</span></p>
-    <h1>Devis</h1>
+    <p class="kicker">Le Checkpoint — outil interne · <span id="appVersion" title="Version du calculateur">Version 2026-11-26.2</span></p>
+    <h1>Devis <button type="button" id="btnModeEmploi" style="vertical-align:middle; margin-left:10px; font:600 13px Inter,system-ui,sans-serif; padding:6px 12px; border:1px solid var(--line,#c9c0ac); background:var(--paper-2,#fff); border-radius:6px; cursor:pointer;">📖 Mode d'emploi</button></h1>
     <p class="sub">Préparation de devis et estimation de la marge d’un événement au bar. Les tarifs marqués <span class="tbd">à définir</span> sont modifiables directement dans les champs.</p>
   </header>
 
@@ -2787,4 +2787,94 @@
   });
 </script>
 
+<!-- MODE-EMPLOI:DEBUT -->
+<div id="modeEmploi" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; padding:24px 12px; overflow:auto;">
+  <div style="max-width:720px; margin:0 auto; background:#fff; color:#1f2a3c; border-radius:10px; padding:24px 28px; box-shadow:0 12px 40px rgba(0,0,0,.3); font:14px/1.55 Inter,system-ui,sans-serif;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h2 style="margin:0; font-family:Fraunces,Georgia,serif;">Mode d'emploi du calculateur</h2>
+      <button type="button" id="btnFermerModeEmploi" style="border:1px solid #c9c0ac; background:#efeae0; border-radius:6px; padding:6px 12px; cursor:pointer;">Fermer ✕</button>
+    </div>
+    <div class="mode-emploi-contenu"><p>Un devis se fait en 4 étapes : ouvrir, remplir, vérifier, envoyer.</p>
+<h2>Les règles à retenir</h2>
+<h3>Créneau et location</h3>
+<ul>
+<li><strong>Le client réserve tout le Checkpoint</strong> → cochez <strong>Hors ouverture</strong>.</li>
+<li><strong>Le client vient pendant nos heures d'ouverture</strong> → cochez <strong>Pendant ouverture</strong>.</li>
+<li><strong>Atelier</strong> → location minimum <strong>35 € HTVA par heure</strong> : vérifiez que le tarif horaire dans Paramètres n'est pas en dessous.</li>
+<li><strong>Location de salle avec bar</strong> → location minimum <strong>35 € HTVA par heure</strong>, plus <strong>Garantie de consommation</strong> en mode minimum de <strong>200 €</strong>.</li>
+</ul>
+<h3>Bar et consommations</h3>
+<ul>
+<li><strong>Minimum de consommation demandé au client</strong> → cochez <strong>Garantie de consommation</strong>, mode <strong>minimum</strong>, et mettez le montant.</li>
+</ul>
+<h3>Équipe</h3>
+<ul>
+<li><strong>Plus de 15 à 20 invités</strong> → ajoutez une personne d'équipe pour offrir un service de qualité : <strong>Prestations → Service Bar → Nombre de personnes</strong>. Le calculateur affiche un simple rappel, non bloquant : le PDF reste possible.</li>
+<li><strong>Traiteur chaud (pâtes…)</strong> → cochez <strong>Service traiteur (personne en plus)</strong> dans le Service Traiteur et tapez le nombre de personnes et d'heures de service. Ne touchez pas au Service Bar.</li>
+</ul>
+<h3>Traiteur</h3>
+<ul>
+<li><strong>Le client a choisi son repas</strong> → cochez <strong>Traiteur</strong> et <strong>Gestion traiteur</strong>, puis la partie choisie (Apéritif, Plat ou Dessert) avec <strong>notre prix d'achat</strong> — jamais le prix client.</li>
+<li><strong>Le client n'a pas encore choisi</strong> → ne cochez pas Traiteur : listez les choix dans <strong>Traiteur à définir</strong>.</li>
+</ul>
+<h3>Animation</h3>
+<ul>
+<li><strong>On anime l'événement</strong> → cochez chaque animation prévue et tapez ses heures.</li>
+</ul>
+<h3>Devis et envoi</h3>
+<ul>
+<li><strong>Une ligne affiche 0 €</strong> → décochez-la, ou mettez un prix.</li>
+<li><strong>Le devis change après envoi</strong> → rouvrez-le et <strong>Enregistrez une version</strong> : ne supprimez jamais l'ancienne.</li>
+<li><strong>Avant d'envoyer</strong> → regardez toujours l'<strong>Aperçu devis client</strong>.</li>
+</ul>
+<h2>1. Ouvrir</h2>
+<ol>
+<li>Allez sur <a target="_blank" rel="noopener" href="https://tenaudv-ai.github.io/Devischeckpoint/">tenaudv-ai.github.io/Devischeckpoint</a>.</li>
+<li>Vérifiez la <strong>version</strong> en haut de la page ; si elle n'est pas à jour, faites <strong>Ctrl+F5</strong>.</li>
+<li>Au premier passage sur un appareil, tapez la <strong>clé d'accès</strong> puis <strong>Valider</strong>.</li>
+<li>Cliquez sur <strong>Nouveau devis</strong>, ou sur <strong>Ancien devis</strong> puis <strong>Ouvrir</strong> pour en reprendre un.</li>
+</ol>
+<h2>2. Remplir</h2>
+<ol>
+<li><strong>Client et devis</strong> : intitulé, client, e-mail, date de l'événement. Sous <strong>▸ Détails du devis</strong> : notes et case <strong>Acompte de 30 %</strong>.</li>
+<li><strong>Heures, invités, créneau</strong> : Hors ouverture ou Pendant ouverture (voir les règles), ou un forfait (Anniversaire, Atelier…).</li>
+<li><strong>Prestations</strong> : cochez ce que le client prend, service par service (Bar, Animation, Traiteur, Matériel, Entretien), en suivant les règles ci-dessus.</li>
+<li><strong>Traiteur à définir</strong> (facultatif) : une proposition par ligne avec son prix client, <code>#</code> au début d'une ligne pour un titre. Affiché en fin de devis, hors total.</li>
+</ol>
+<h2>3. Vérifier</h2>
+<ol>
+<li>Lisez les <strong>alertes</strong> du panneau de droite : tant qu'il en reste une bloquante, le PDF ne se génère pas.</li>
+<li>Cliquez sur <strong>Aperçu devis client</strong> pour voir ce que le client recevra.</li>
+</ol>
+<h2>4. Enregistrer et envoyer</h2>
+<ol>
+<li><strong>Enregistrer une version</strong> : le devis est sauvegardé dans le Drive du Checkpoint.</li>
+<li><strong>PDF client</strong> : à joindre au mail envoyé depuis contact@lecheckpoint.be. (<strong>PDF interne</strong> = détail des coûts et de la marge, pour l'équipe.)</li>
+</ol>
+<h2>En cas de souci</h2>
+<ul>
+<li><strong>Liste des devis vide</strong> : Ctrl+F5 et retapez la clé.</li>
+<li><strong>Devis supprimé par erreur</strong> : corbeille Google Drive, 30 jours pour le restaurer.</li>
+</ul></div>
+  </div>
+</div>
+<style>
+.mode-emploi-contenu h2 { font-family:Fraunces,Georgia,serif; font-size:19px; margin:22px 0 6px; border-bottom:1px solid #e5dfd2; padding-bottom:4px; }
+.mode-emploi-contenu h3 { font-size:14.5px; margin:14px 0 4px; color:#2f5233; }
+.mode-emploi-contenu ul, .mode-emploi-contenu ol { margin:4px 0 8px; padding-left:22px; }
+.mode-emploi-contenu li { margin:3px 0; }
+.mode-emploi-contenu code { background:#f3efe6; padding:0 4px; border-radius:3px; }
+</style>
+<script>
+(function () {
+  const m = document.getElementById('modeEmploi');
+  const ouvrir = () => { m.style.display = 'block'; };
+  const fermer = () => { m.style.display = 'none'; };
+  document.getElementById('btnModeEmploi').addEventListener('click', ouvrir);
+  document.getElementById('btnFermerModeEmploi').addEventListener('click', fermer);
+  m.addEventListener('click', e => { if (e.target === m) fermer(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') fermer(); });
+})();
+</script>
+<!-- MODE-EMPLOI:FIN -->
 </body></html>
